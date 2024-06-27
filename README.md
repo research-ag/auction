@@ -1,12 +1,14 @@
-# ... for Motoko
+# Auction for Motoko
 
 ## Overview
 
+A module which implements auction functionality for various trading pairs against "trusted" fungible token.
+
 ### Links
 
-The package is published on [MOPS](https://mops.one/...) and [GitHub](https://github.com/research-ag/...).
+The package is published on [MOPS](https://mops.one/auction) and [GitHub](https://github.com/research-ag/auction).
 
-The API documentation can be found [here](https://mops.one/.../docs).
+The API documentation can be found [here](https://mops.one/auction/docs).
 
 For updates, help, questions, feedback and other requests related to this package join us on:
 
@@ -24,12 +26,12 @@ For updates, help, questions, feedback and other requests related to this packag
 
 You need `mops` installed. In your project directory run:
 ```
-mops add <...>
+mops add auction
 ```
 
 In the Motoko source file import the package as:
 ```
-import .. "mo:..";
+import Auction "mo:auction";
 ```
 
 ### Example
@@ -40,7 +42,7 @@ We need up-to-date versions of `node`, `moc` and `mops` installed.
 
 Then run:
 ```
-git clone git@github.com:research-ag/....git
+git clone git@github.com:research-ag/auction.git
 mops install
 mops test
 ```
@@ -61,8 +63,8 @@ mops bench --replica pocket-ic
 MR Research AG, 2023-2024
 ## Authors
 
-Main author:\
-Contributors:
+Main author: Andy Gura
+Contributors: Timo Hanke
 ## License 
 
 Apache-2.0
