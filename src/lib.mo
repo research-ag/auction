@@ -135,7 +135,7 @@ module {
         settings : {
             minimumOrder : Nat;
             minAskVolume : (AssetId, AssetInfo) -> Int;
-            performanceCounter : Nat -> Nat64;
+            performanceCounter : Nat32 -> Nat64;
         },
     ) {
 
