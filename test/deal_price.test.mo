@@ -2,16 +2,13 @@ import Array "mo:base/Array";
 import Prim "mo:prim";
 import Principal "mo:base/Principal";
 
-import PT "mo:promtracker";
 import Vec "mo:vector";
 
 import Auction "../src/lib";
 
-func init(trustedAssetId : Nat) : (Auction.Auction, Principal, PT.PromTracker) {
-    let tracker = PT.PromTracker("", 60);
+func init(trustedAssetId : Nat) : (Auction.Auction, Principal) {
     let auction = Auction.Auction(
         trustedAssetId,
-        tracker,
         {
             minAskVolume = func(_, _) = 0;
             minimumOrder = 5_000;
@@ -20,7 +17,7 @@ func init(trustedAssetId : Nat) : (Auction.Auction, Principal, PT.PromTracker) {
     );
     auction.registerAssets(trustedAssetId + 1);
     let user = Principal.fromText("rl3fy-hyflm-6r3qg-7nid5-lr6cp-ysfwh-xiqme-stgsq-bcga5-vnztf-mqe");
-    (auction, user, tracker);
+    (auction, user);
 };
 
 func createFt(auction : Auction.Auction) : Nat {
@@ -31,7 +28,7 @@ func createFt(auction : Auction.Auction) : Nat {
 
 do {
     Prim.debugPrint("should use correct price when orders are completely fulfilled and there are other unfulfilled orders...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
     auction.processAsset(ft);
 
@@ -71,7 +68,7 @@ do {
 
 do {
     Prim.debugPrint("should use correct price when ask completely fulfilled and there are other unfulfilled orders...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
     auction.processAsset(ft);
 
@@ -109,7 +106,7 @@ do {
 
 do {
     Prim.debugPrint("should use correct price when bid completely fulfilled and there are other unfulfilled orders...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
     auction.processAsset(ft);
 
@@ -147,7 +144,7 @@ do {
 
 do {
     Prim.debugPrint("should have correct credits flow...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
     auction.processAsset(ft);
 

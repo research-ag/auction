@@ -8,7 +8,6 @@ license = "Apache-2.0"
 
 [dependencies]
 base = "0.11.1"
-promtracker = "0.5.3"
 vector = "0.3.1"
 
 [dev-dependencies]

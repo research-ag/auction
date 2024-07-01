@@ -1,17 +1,13 @@
 import Prim "mo:prim";
 import Principal "mo:base/Principal";
-import Text "mo:base/Text";
 
-import PT "mo:promtracker";
 import Vec "mo:vector";
 
 import Auction "../src/lib";
 
-func init(trustedAssetId : Nat) : (Auction.Auction, Principal, PT.PromTracker) {
-    let tracker = PT.PromTracker("", 60);
+func init(trustedAssetId : Nat) : (Auction.Auction, Principal) {
     let auction = Auction.Auction(
         trustedAssetId,
-        tracker,
         {
             minAskVolume = func(_, _) = 0;
             minimumOrder = 5_000;
@@ -20,7 +16,7 @@ func init(trustedAssetId : Nat) : (Auction.Auction, Principal, PT.PromTracker) {
     );
     auction.registerAssets(trustedAssetId + 1);
     let user = Principal.fromText("rl3fy-hyflm-6r3qg-7nid5-lr6cp-ysfwh-xiqme-stgsq-bcga5-vnztf-mqe");
-    (auction, user, tracker);
+    (auction, user);
 };
 
 func createFt(auction : Auction.Auction) : Nat {
@@ -31,7 +27,7 @@ func createFt(auction : Auction.Auction) : Nat {
 
 do {
     Prim.debugPrint("should not be able to place bid on non-existent token...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
 
     let ft = 123;
@@ -45,7 +41,7 @@ do {
 
 do {
     Prim.debugPrint("should not be able to place bid on trusted token...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
 
     let ft = 0;
@@ -58,7 +54,7 @@ do {
 
 do {
     Prim.debugPrint("should not be able to place bid with non-sufficient deposit...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
 
     let ft = createFt(auction);
@@ -71,7 +67,7 @@ do {
 
 do {
     Prim.debugPrint("should not be able to place bid with too low volume...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
 
     let ft = createFt(auction);
@@ -84,7 +80,7 @@ do {
 
 do {
     Prim.debugPrint("should be able to place a bid...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
 
     let ft = createFt(auction);
@@ -100,16 +96,15 @@ do {
 };
 
 do {
-    Prim.debugPrint("should affect metrics...");
-    let (auction, user, tracker) = init(0);
+    Prim.debugPrint("should affect stats...");
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
 
     let ft = createFt(auction);
     ignore auction.placeBid(user, ft, 2_000, 15_000);
 
-    var metrics = tracker.renderExposition("canister=\"aaa\"");
-    assert Text.contains(metrics, #text("bids_amount{canister=\"aaa\",asset_id=\"1\"} 1 "));
-    assert Text.contains(metrics, #text("bids_volume{canister=\"aaa\",asset_id=\"1\"} 2000 "));
+    assert Vec.get(auction.stats.assets, ft).bidsAmount == 1;
+    assert Vec.get(auction.stats.assets, ft).totalBidVolume == 2000;
 
     let seller = Principal.fromText("ocqy6-3dphi-xgf54-vkr2e-lk4oz-3exc6-446gr-5e72g-bsdfo-4nzrm-hqe");
     ignore auction.appendCredit(seller, ft, 500_000_000);
@@ -117,14 +112,13 @@ do {
     auction.processAsset(ft);
 
     assert auction.queryAssetBids(user, ft).size() == 0;
-    metrics := tracker.renderExposition("canister=\"aaa\"");
-    assert Text.contains(metrics, #text("bids_amount{canister=\"aaa\",asset_id=\"1\"} 0 "));
-    assert Text.contains(metrics, #text("bids_volume{canister=\"aaa\",asset_id=\"1\"} 0 "));
+    assert Vec.get(auction.stats.assets, ft).bidsAmount == 0;
+    assert Vec.get(auction.stats.assets, ft).totalBidVolume == 0;
 };
 
 do {
     Prim.debugPrint("unfulfilled bids should affect deposit...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
 
     let ft = createFt(auction);
@@ -140,7 +134,7 @@ do {
 
 do {
     Prim.debugPrint("should be able to place few bids on the same token...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
     let ft = createFt(auction);
 
@@ -157,7 +151,7 @@ do {
 
 do {
     Prim.debugPrint("should not be able to place few bids on the same token with the same price...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
     let ft = createFt(auction);
 
@@ -177,7 +171,7 @@ do {
 
 do {
     Prim.debugPrint("should be able to replace a bid...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
     let ft = createFt(auction);
 
@@ -205,7 +199,7 @@ do {
 
 do {
     Prim.debugPrint("non-sufficient deposit should not cancel old bid when replacing...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
     let ft = createFt(auction);
 
@@ -230,7 +224,7 @@ do {
 
 do {
     Prim.debugPrint("should fulfil the only bid...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     ignore auction.appendCredit(user, 0, 500_000_000);
     let ft = createFt(auction);
 
@@ -263,7 +257,7 @@ do {
 
 do {
     Prim.debugPrint("should fulfil many bids at once...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let user2 = Principal.fromText("tbsil-wffo6-dnxyb-b27v7-c5ghk-jsiqs-gsok7-bmtyu-w7u3b-el75k-iae");
 
     ignore auction.appendCredit(user, 0, 500_000_000);
@@ -298,7 +292,7 @@ do {
 
 do {
     Prim.debugPrint("should fulfil bids with the same price in order of insertion...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
 
     let seller = Principal.fromText("ocqy6-3dphi-xgf54-vkr2e-lk4oz-3exc6-446gr-5e72g-bsdfo-4nzrm-hqe");
@@ -330,7 +324,7 @@ do {
 
 do {
     Prim.debugPrint("should charge lowest price...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
 
     let seller = Principal.fromText("ocqy6-3dphi-xgf54-vkr2e-lk4oz-3exc6-446gr-5e72g-bsdfo-4nzrm-hqe");
@@ -367,7 +361,7 @@ do {
 
 do {
     Prim.debugPrint("should fulfil lowest bid partially...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
 
     let seller = Principal.fromText("ocqy6-3dphi-xgf54-vkr2e-lk4oz-3exc6-446gr-5e72g-bsdfo-4nzrm-hqe");
@@ -420,7 +414,7 @@ do {
 
 do {
     Prim.debugPrint("should carry partially fulfilled bid over to the next session...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
 
     ignore auction.appendCredit(user, 0, 500_000_000);
@@ -453,7 +447,7 @@ do {
 
 do {
     Prim.debugPrint("should fulfil bids by priority and preserve priority between bids through sessions...");
-    let (auction, _, _) = init(0);
+    let (auction, _) = init(0);
     let ft = createFt(auction);
     let seller = Principal.fromText("ocqy6-3dphi-xgf54-vkr2e-lk4oz-3exc6-446gr-5e72g-bsdfo-4nzrm-hqe");
     ignore auction.appendCredit(seller, ft, 500_000_000);
@@ -504,7 +498,7 @@ do {
 
 do {
     Prim.debugPrint("should be able to place another bid for next auction session...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let ft = createFt(auction);
     let seller = Principal.fromText("ocqy6-3dphi-xgf54-vkr2e-lk4oz-3exc6-446gr-5e72g-bsdfo-4nzrm-hqe");
     ignore auction.appendCredit(seller, ft, 500_000_000);

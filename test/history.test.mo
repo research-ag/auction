@@ -1,16 +1,13 @@
 import Prim "mo:prim";
 import Principal "mo:base/Principal";
 
-import PT "mo:promtracker";
 import Vec "mo:vector";
 
 import Auction "../src/lib";
 
-func init(trustedAssetId : Nat) : (Auction.Auction, Principal, PT.PromTracker) {
-    let tracker = PT.PromTracker("", 60);
+func init(trustedAssetId : Nat) : (Auction.Auction, Principal) {
     let auction = Auction.Auction(
         trustedAssetId,
-        tracker,
         {
             minAskVolume = func(_, _) = 0;
             minimumOrder = 5_000;
@@ -19,7 +16,7 @@ func init(trustedAssetId : Nat) : (Auction.Auction, Principal, PT.PromTracker) {
     );
     auction.registerAssets(trustedAssetId + 1);
     let user = Principal.fromText("rl3fy-hyflm-6r3qg-7nid5-lr6cp-ysfwh-xiqme-stgsq-bcga5-vnztf-mqe");
-    (auction, user, tracker);
+    (auction, user);
 };
 
 func createFt(auction : Auction.Auction) : Nat {
@@ -30,7 +27,7 @@ func createFt(auction : Auction.Auction) : Nat {
 
 do {
     Prim.debugPrint("should return price history with descending order...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let seller = Principal.fromText("ocqy6-3dphi-xgf54-vkr2e-lk4oz-3exc6-446gr-5e72g-bsdfo-4nzrm-hqe");
 
     let ft1 = createFt(auction);
@@ -66,7 +63,7 @@ do {
 
 do {
     Prim.debugPrint("should return transaction history with descending order...");
-    let (auction, user, _) = init(0);
+    let (auction, user) = init(0);
     let seller = Principal.fromText("ocqy6-3dphi-xgf54-vkr2e-lk4oz-3exc6-446gr-5e72g-bsdfo-4nzrm-hqe");
 
     let ft1 = createFt(auction);

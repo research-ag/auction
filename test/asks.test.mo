@@ -1,17 +1,13 @@
 import Prim "mo:prim";
 import Principal "mo:base/Principal";
-import Text "mo:base/Text";
 
-import PT "mo:promtracker";
 import Vec "mo:vector";
 
 import Auction "../src/lib";
 
-func init(trustedAssetId : Nat) : (Auction.Auction, Principal, PT.PromTracker) {
-  let tracker = PT.PromTracker("", 60);
+func init(trustedAssetId : Nat) : (Auction.Auction, Principal) {
   let auction = Auction.Auction(
     trustedAssetId,
-    tracker,
     {
       minAskVolume = func(_, _) = 20;
       minimumOrder = 5_000;
@@ -20,7 +16,7 @@ func init(trustedAssetId : Nat) : (Auction.Auction, Principal, PT.PromTracker) {
   );
   auction.registerAssets(trustedAssetId + 1);
   let user = Principal.fromText("rl3fy-hyflm-6r3qg-7nid5-lr6cp-ysfwh-xiqme-stgsq-bcga5-vnztf-mqe");
-  (auction, user, tracker);
+  (auction, user);
 };
 
 func createFt(auction : Auction.Auction) : Nat {
@@ -31,7 +27,7 @@ func createFt(auction : Auction.Auction) : Nat {
 
 do {
   Prim.debugPrint("should not be able to place ask on non-existent token...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   ignore auction.appendCredit(user, 0, 500_000_000);
   let ft = 123;
   switch (auction.placeAsk(user, ft, 2_000, 100_000)) {
@@ -43,7 +39,7 @@ do {
 
 do {
   Prim.debugPrint("should not be able to place ask on trusted token...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   ignore auction.appendCredit(user, 0, 500_000_000);
 
   switch (auction.placeAsk(user, 0, 2_000, 100_000)) {
@@ -55,7 +51,7 @@ do {
 
 do {
   Prim.debugPrint("should not be able to place ask with non-sufficient deposit...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   ignore auction.appendCredit(user, ft, 500_000_000);
 
@@ -68,7 +64,7 @@ do {
 
 do {
   Prim.debugPrint("should not be able to place an ask with too low volume...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
 
   let ft = createFt(auction);
   ignore auction.appendCredit(user, ft, 500_000_000);
@@ -81,7 +77,7 @@ do {
 
 do {
   Prim.debugPrint("should be able to place a market ask...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
 
   let ft = createFt(auction);
   ignore auction.appendCredit(user, ft, 500_000_000);
@@ -94,7 +90,7 @@ do {
 
 do {
   Prim.debugPrint("should be able to place an ask...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   ignore auction.appendCredit(user, ft, 500_000_000);
   switch (auction.placeAsk(user, ft, 2_000_000, 10)) {
@@ -110,8 +106,8 @@ do {
 };
 
 do {
-  Prim.debugPrint("should affect metrics...");
-  let (auction, user, tracker) = init(0);
+  Prim.debugPrint("should affect stats...");
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   auction.processAsset(ft);
   ignore auction.appendCredit(user, ft, 500_000_000);
@@ -121,21 +117,19 @@ do {
   ignore auction.placeBid(buyer, ft, 2_000_000, 100);
   ignore auction.placeAsk(user, ft, 2_000_000, 100);
 
-  var metrics = tracker.renderExposition("canister=\"aaa\"");
-  assert Text.contains(metrics, #text("asks_amount{canister=\"aaa\",asset_id=\"1\"} 1 "));
-  assert Text.contains(metrics, #text("asks_volume{canister=\"aaa\",asset_id=\"1\"} 2000000 "));
+  assert Vec.get(auction.stats.assets, ft).asksAmount == 1;
+  assert Vec.get(auction.stats.assets, ft).totalAskVolume == 2000000;
 
   auction.processAsset(ft);
 
   assert auction.queryAssetAsks(user, ft).size() == 0;
-  metrics := tracker.renderExposition("canister=\"aaa\"");
-  assert Text.contains(metrics, #text("asks_amount{canister=\"aaa\",asset_id=\"1\"} 0 "));
-  assert Text.contains(metrics, #text("asks_volume{canister=\"aaa\",asset_id=\"1\"} 0 "));
+  assert Vec.get(auction.stats.assets, ft).asksAmount == 0;
+  assert Vec.get(auction.stats.assets, ft).totalAskVolume == 0;
 };
 
 do {
   Prim.debugPrint("should be able to place few asks on the same asset...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   ignore auction.appendCredit(user, ft, 500_000_000);
   assert auction.queryCredit(user, ft) == 500_000_000;
@@ -153,7 +147,7 @@ do {
 do {
   Prim.debugPrint("should not be able to place few asks on the same asset with the same price...");
 
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   ignore auction.appendCredit(user, ft, 500_000_000);
   assert auction.queryCredit(user, ft) == 500_000_000;
@@ -173,7 +167,7 @@ do {
 
 do {
   Prim.debugPrint("should be able to replace an ask...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   ignore auction.appendCredit(user, ft, 500_000_000);
 
@@ -201,7 +195,7 @@ do {
 
 do {
   Prim.debugPrint("non-sufficient deposit should not cancel old ask when replacing...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   ignore auction.appendCredit(user, ft, 500_000_000);
 
@@ -226,7 +220,7 @@ do {
 
 do {
   Prim.debugPrint("should fulfil the only ask...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   auction.processAsset(ft);
   ignore auction.appendCredit(user, ft, 500_000_000);
@@ -255,7 +249,7 @@ do {
 
 do {
   Prim.debugPrint("should sell by price priority and preserve priority...");
-  let (auction, user, _) = init(0);
+  let (auction, user) = init(0);
   let ft = createFt(auction);
   let buyer = Principal.fromText("khppa-evswo-bmx2f-4o7bj-4t6ai-burgf-ued7b-vpduu-6fgxt-ajby6-iae");
   ignore auction.appendCredit(buyer, 0, 5_000_000_000);

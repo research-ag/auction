@@ -17,7 +17,6 @@ import Principal "mo:base/Principal";
 import R "mo:base/Result";
 import RBTree "mo:base/RBTree";
 
-import PT "mo:promtracker";
 import Vec "mo:vector";
 
 module {
@@ -30,6 +29,11 @@ module {
         assets : Vec.Vector<StableAssetInfo>;
         users : RBTree.Tree<Principal, UserInfo>;
         history : List.List<PriceHistoryItem>;
+        stats : {
+            usersAmount : Nat;
+            accountsAmount : Nat;
+            assets : Vec.Vector<{ bidsAmount : Nat; totalBidVolume : Nat; asksAmount : Nat; totalAskVolume : Nat; lastProcessingInstructions : Nat }>;
+        };
     };
 
     public func defaultStableDataV1() : StableDataV1 = {
@@ -37,6 +41,11 @@ module {
         assets = Vec.new();
         users = #leaf;
         history = null;
+        stats = {
+            usersAmount = 0;
+            accountsAmount = 0;
+            assets = Vec.new();
+        };
     };
 
     public type Account = {
@@ -80,13 +89,6 @@ module {
         var asks : AssocList.AssocList<OrderId, Order>;
         var bids : AssocList.AssocList<OrderId, Order>;
         var lastSwapRate : Float;
-        metrics : {
-            bidsAmount : PT.CounterValue;
-            totalBidVolume : PT.CounterValue;
-            asksAmount : PT.CounterValue;
-            totalAskVolume : PT.CounterValue;
-            lastProcessingInstructions : PT.CounterValue;
-        };
     };
 
     public type CancelOrderError = { #UnknownPrincipal };
@@ -125,13 +127,18 @@ module {
         priorityComparator : (order : Order, newOrder : Order) -> Bool;
         lowOrderSign : (orderAssetId : AssetId, orderAssetInfo : AssetInfo, volume : Nat, price : Float) -> Bool;
 
-        amountMetric : (assetInfo : AssetInfo) -> PT.CounterValue;
-        volumeMetric : (assetInfo : AssetInfo) -> PT.CounterValue;
+        amountStat : (assetId : AssetId) -> {
+            add : (n : Nat) -> ();
+            sub : (n : Nat) -> ();
+        };
+        volumeStat : (assetId : AssetId) -> {
+            add : (n : Nat) -> ();
+            sub : (n : Nat) -> ();
+        };
     };
 
     public class Auction(
         trustedAssetId : AssetId,
-        metrics : PT.PromTracker,
         settings : {
             minimumOrder : Nat;
             minAskVolume : (AssetId, AssetInfo) -> Int;
@@ -149,23 +156,15 @@ module {
         public let users : RBTree.RBTree<Principal, UserInfo> = RBTree.RBTree<Principal, UserInfo>(Principal.compare);
         // asset history
         public var history : List.List<PriceHistoryItem> = null;
-
-        ignore metrics.addPullValue("sessions_counter", "", func() = sessionsCounter);
-        ignore metrics.addPullValue("assets_amount", "", func() = Vec.size(assets));
-        let metricUsersAmount = metrics.addCounter("users_amount", "", true);
-        let metricAccountsAmount = metrics.addCounter("accounts_amount", "", true);
-        public func initAssetMetrics(assetId : AssetId) : {
-            asksAmount : PT.CounterValue;
-            totalAskVolume : PT.CounterValue;
-            bidsAmount : PT.CounterValue;
-            totalBidVolume : PT.CounterValue;
-            lastProcessingInstructions : PT.CounterValue;
+        // stats
+        public var stats : {
+            var usersAmount : Nat;
+            var accountsAmount : Nat;
+            assets : Vec.Vector<{ var bidsAmount : Nat; var totalBidVolume : Nat; var asksAmount : Nat; var totalAskVolume : Nat; var lastProcessingInstructions : Nat }>;
         } = {
-            asksAmount = metrics.addCounter("asks_amount", "asset_id=\"" # Nat.toText(assetId) # "\"", true);
-            totalAskVolume = metrics.addCounter("asks_volume", "asset_id=\"" # Nat.toText(assetId) # "\"", true);
-            bidsAmount = metrics.addCounter("bids_amount", "asset_id=\"" # Nat.toText(assetId) # "\"", true);
-            totalBidVolume = metrics.addCounter("bids_volume", "asset_id=\"" # Nat.toText(assetId) # "\"", true);
-            lastProcessingInstructions = metrics.addCounter("processing_instructions", "asset_id=\"" # Nat.toText(assetId) # "\"", true);
+            var usersAmount = 0;
+            var accountsAmount = 0;
+            assets = Vec.new();
         };
 
         public func initUser(p : Principal) : UserInfo {
@@ -180,7 +179,7 @@ module {
                 case (?v) Prim.trap("Prevented user data overwrite");
                 case (_) {};
             };
-            metricUsersAmount.add(1);
+            stats.usersAmount += 1;
             data;
         };
 
@@ -195,10 +194,17 @@ module {
                         var bids = List.nil();
                         var bidCounter = 0;
                         var lastSwapRate = 0;
-                        metrics = initAssetMetrics(assetsVecSize);
                     } : AssetInfo
                 )
                 |> Vec.add(assets, _);
+                ({
+                    var asksAmount = 0;
+                    var bidsAmount = 0;
+                    var lastProcessingInstructions = 0;
+                    var totalAskVolume = 0;
+                    var totalBidVolume = 0;
+                })
+                |> Vec.add(stats.assets, _);
                 assetsVecSize += 1;
             };
         };
@@ -329,7 +335,7 @@ module {
                     { var credit = amount; var lockedCredit = 0 }
                     |> AssocList.replace<AssetId, Account>(userInfo.credits, assetId, Nat.equal, ?_)
                     |> (userInfo.credits := _.0);
-                    metricAccountsAmount.add(1);
+                    stats.accountsAmount += 1;
                     amount;
                 };
             };
@@ -349,7 +355,7 @@ module {
                     { var credit = credit; var lockedCredit = 0 }
                     |> AssocList.replace<AssetId, Account>(userInfo.credits, assetId, Nat.equal, ?_)
                     |> (userInfo.credits := _.0);
-                    metricAccountsAmount.add(1);
+                    stats.accountsAmount += 1;
                     credit;
                 };
             };
@@ -385,8 +391,22 @@ module {
             priorityComparator = func(order, newOrder) = order.price > newOrder.price;
             lowOrderSign = func(assetId, assetInfo, volume, price) = volume == 0 or (price > 0 and volume < settings.minAskVolume(assetId, assetInfo));
 
-            amountMetric = func(assetInfo) = assetInfo.metrics.asksAmount;
-            volumeMetric = func(assetInfo) = assetInfo.metrics.totalAskVolume;
+            amountStat = func(assetId) = {
+                add = func(n : Nat) {
+                    Vec.get(stats.assets, assetId).asksAmount += n;
+                };
+                sub = func(n : Nat) {
+                    Vec.get(stats.assets, assetId).asksAmount -= n;
+                };
+            };
+            volumeStat = func(assetId) = {
+                add = func(n : Nat) {
+                    Vec.get(stats.assets, assetId).totalAskVolume += n;
+                };
+                sub = func(n : Nat) {
+                    Vec.get(stats.assets, assetId).totalAskVolume -= n;
+                };
+            };
         };
         let bidCtx : OrderCtx = {
             kind = #bid;
@@ -404,12 +424,26 @@ module {
             priorityComparator = func(order, newOrder) = order.price < newOrder.price;
             lowOrderSign = func(_, _, volume, price) = getTotalPrice(volume, price) < settings.minimumOrder;
 
-            amountMetric = func(assetInfo) = assetInfo.metrics.bidsAmount;
-            volumeMetric = func(assetInfo) = assetInfo.metrics.totalBidVolume;
+            amountStat = func(assetId) = {
+                add = func(n : Nat) {
+                    Vec.get(stats.assets, assetId).bidsAmount += n;
+                };
+                sub = func(n : Nat) {
+                    Vec.get(stats.assets, assetId).bidsAmount -= n;
+                };
+            };
+            volumeStat = func(assetId) = {
+                add = func(n : Nat) {
+                    Vec.get(stats.assets, assetId).totalBidVolume += n;
+                };
+                sub = func(n : Nat) {
+                    Vec.get(stats.assets, assetId).totalBidVolume -= n;
+                };
+            };
         };
 
         // order management functions
-        private func placeOrderInternal(ctx : OrderCtx, userInfo : UserInfo, accountToCharge : Account, assetInfo : AssetInfo, order : Order) : OrderId {
+        private func placeOrderInternal(ctx : OrderCtx, userInfo : UserInfo, accountToCharge : Account, assetId : AssetId, assetInfo : AssetInfo, order : Order) : OrderId {
             let orderId = ordersCounter;
             ordersCounter += 1;
             // update user info
@@ -422,9 +456,9 @@ module {
                 func(x) = ctx.priorityComparator(x.1, order),
             )
             |> ctx.assetListSet(assetInfo, _);
-            // update metrics
-            ctx.amountMetric(assetInfo).add(1);
-            ctx.volumeMetric(assetInfo).add(order.volume);
+            // update stats
+            ctx.amountStat(assetId).add(1);
+            ctx.volumeStat(assetId).add(order.volume);
             orderId;
         };
 
@@ -454,7 +488,7 @@ module {
                 price = price;
                 var volume = volume;
             };
-            placeOrderInternal(ctx, userInfo, sourceAcc, assetInfo, order) |> #ok(_);
+            placeOrderInternal(ctx, userInfo, sourceAcc, assetId, assetInfo, order) |> #ok(_);
         };
 
         public func replaceOrder(ctx : OrderCtx, p : Principal, orderId : OrderId, volume : Nat, price : Float) : R.Result<OrderId, ReplaceOrderError> {
@@ -508,8 +542,8 @@ module {
                         let (upd, deleted) = listFindOneAndDelete<(OrderId, Order)>(ctx.assetList(assetInfo), func(id, _) = id == orderId);
                         assert deleted; // should always be true unless we have a bug with asset orders and user orders out of sync
                         ctx.assetListSet(assetInfo, upd);
-                        ctx.amountMetric(assetInfo).sub(1);
-                        ctx.volumeMetric(assetInfo).sub(existingOrder.volume);
+                        ctx.amountStat(existingOrder.assetId).sub(1);
+                        ctx.volumeStat(existingOrder.assetId).sub(existingOrder.volume);
                         ?existingOrder;
                     };
                 }
@@ -517,16 +551,16 @@ module {
         };
 
         // public shortcuts, optimized by skipping userInfo tree lookup and all validation checks
-        public func placeAskInternal(userInfo : UserInfo, askSourceAcc : Account, assetInfo : AssetInfo, order : Order) : OrderId {
-            placeOrderInternal(askCtx, userInfo, askSourceAcc, assetInfo, order);
+        public func placeAskInternal(userInfo : UserInfo, askSourceAcc : Account, assetId : AssetId, assetInfo : AssetInfo, order : Order) : OrderId {
+            placeOrderInternal(askCtx, userInfo, askSourceAcc, assetId, assetInfo, order);
         };
 
         public func cancelAskInternal(userInfo : UserInfo, orderId : OrderId) : ?Order {
             cancelOrderInternal(askCtx, userInfo, orderId);
         };
 
-        public func placeBidInternal(userInfo : UserInfo, trustedAcc : Account, assetInfo : AssetInfo, order : Order) : OrderId {
-            placeOrderInternal(bidCtx, userInfo, trustedAcc, assetInfo, order);
+        public func placeBidInternal(userInfo : UserInfo, trustedAcc : Account, assetId : AssetId, assetInfo : AssetInfo, order : Order) : OrderId {
+            placeOrderInternal(bidCtx, userInfo, trustedAcc, assetId, assetInfo, order);
         };
 
         public func cancelBidInternal(userInfo : UserInfo, orderId : OrderId) : ?Order {
@@ -632,6 +666,8 @@ module {
                 case (_) (lastAskToFulfil.1.price + lastBidToFulfil.1.price) / 2; // limit sell against limit buy => use middle price
             };
 
+            let assetStats = Vec.get(stats.assets, assetId);
+
             // process fulfilled asks
             var i = 0;
             var dealVolumeLeft = dealVolume;
@@ -646,7 +682,7 @@ module {
                 } else {
                     AssocList.replace<OrderId, Order>(userInfo.currentAsks, orderId, Nat.equal, null) |> (userInfo.currentAsks := _.0);
                     asksTail := next;
-                    assetInfo.metrics.asksAmount.sub(1);
+                    assetStats.asksAmount -= 1;
                     dealVolumeLeft -= order.volume;
                     order.volume;
                 };
@@ -665,11 +701,11 @@ module {
                         }
                         |> AssocList.replace<AssetId, Account>(userInfo.credits, trustedAssetId, Nat.equal, ?_)
                         |> (userInfo.credits := _.0);
-                        metricAccountsAmount.add(1);
+                        stats.accountsAmount += 1;
                     };
                 };
-                // update metrics
-                assetInfo.metrics.totalAskVolume.sub(volume);
+                // update stats
+                assetStats.totalAskVolume -= volume;
                 // append to history
                 userInfo.history := List.push((Prim.time(), sessionsCounter, #ask, assetId, volume, price), userInfo.history);
                 i += 1;
@@ -690,7 +726,7 @@ module {
                 } else {
                     AssocList.replace<OrderId, Order>(userInfo.currentBids, orderId, Nat.equal, null) |> (userInfo.currentBids := _.0);
                     bidsTail := next;
-                    assetInfo.metrics.bidsAmount.sub(1);
+                    assetStats.bidsAmount -= 1;
                     dealVolumeLeft -= order.volume;
                     order.volume;
                 };
@@ -706,11 +742,11 @@ module {
                         { var credit = volume; var lockedCredit = 0 }
                         |> AssocList.replace<AssetId, Account>(userInfo.credits, assetId, Nat.equal, ?_)
                         |> (userInfo.credits := _.0);
-                        metricAccountsAmount.add(1);
+                        stats.accountsAmount += 1;
                     };
                 };
-                // update metrics
-                assetInfo.metrics.totalBidVolume.sub(volume);
+                // update stats
+                assetStats.totalBidVolume -= volume;
                 // append to history
                 userInfo.history := List.push((Prim.time(), sessionsCounter, #bid, assetId, volume, price), userInfo.history);
                 i += 1;
@@ -720,7 +756,7 @@ module {
             assetInfo.lastSwapRate := price;
             // append to asset history
             history := List.push((Prim.time(), sessionsCounter, assetId, dealVolume, price), history);
-            assetInfo.metrics.lastProcessingInstructions.set(Nat64.toNat(settings.performanceCounter(0) - startInstructions));
+            assetStats.lastProcessingInstructions := Nat64.toNat(settings.performanceCounter(0) - startInstructions);
         };
 
         public func share() : StableDataV1 = {
@@ -733,6 +769,20 @@ module {
                     lastSwapRate = x.lastSwapRate;
                 },
             );
+            stats = {
+                usersAmount = stats.usersAmount;
+                accountsAmount = stats.accountsAmount;
+                assets = Vec.map<{ var bidsAmount : Nat; var totalBidVolume : Nat; var asksAmount : Nat; var totalAskVolume : Nat; var lastProcessingInstructions : Nat }, { bidsAmount : Nat; totalBidVolume : Nat; asksAmount : Nat; totalAskVolume : Nat; lastProcessingInstructions : Nat }>(
+                    stats.assets,
+                    func(x) = {
+                        bidsAmount = x.bidsAmount;
+                        totalBidVolume = x.totalBidVolume;
+                        asksAmount = x.asksAmount;
+                        totalAskVolume = x.totalAskVolume;
+                        lastProcessingInstructions = x.lastProcessingInstructions;
+                    },
+                );
+            };
             users = users.share();
             history = history;
         };
@@ -740,20 +790,28 @@ module {
         public func unshare(data : StableDataV1) {
             sessionsCounter := data.counters.0;
             ordersCounter := data.counters.1;
-            var i = 0;
             assets := Vec.map<StableAssetInfo, AssetInfo>(
                 data.assets,
-                func(x) {
-                    let r = {
-                        var asks = x.asks;
-                        var bids = x.bids;
-                        var lastSwapRate = x.lastSwapRate;
-                        metrics = initAssetMetrics(i);
-                    };
-                    i += 1;
-                    r;
+                func(x) = {
+                    var asks = x.asks;
+                    var bids = x.bids;
+                    var lastSwapRate = x.lastSwapRate;
                 },
             );
+            stats := {
+                var usersAmount = data.stats.usersAmount;
+                var accountsAmount = data.stats.accountsAmount;
+                assets = Vec.map<{ bidsAmount : Nat; totalBidVolume : Nat; asksAmount : Nat; totalAskVolume : Nat; lastProcessingInstructions : Nat }, { var bidsAmount : Nat; var totalBidVolume : Nat; var asksAmount : Nat; var totalAskVolume : Nat; var lastProcessingInstructions : Nat }>(
+                    data.stats.assets,
+                    func(x) = {
+                        var bidsAmount = x.bidsAmount;
+                        var totalBidVolume = x.totalBidVolume;
+                        var asksAmount = x.asksAmount;
+                        var totalAskVolume = x.totalAskVolume;
+                        var lastProcessingInstructions = x.lastProcessingInstructions;
+                    },
+                );
+            };
             users.unshare(data.users);
             history := data.history;
         };
