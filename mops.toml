@@ -1,7 +1,7 @@
 [package]
 name = "auction"
 version = "0.0.1"
-description = ""
+description = "A module which implements auction functionality for various trading pairs against \"trusted\" fungible token."
 repository = "https://github.com/research-ag/auction"
 keywords = [ "auction" ]
 license = "Apache-2.0"
@@ -13,8 +13,6 @@ vector = "0.3.1"
 
 [dev-dependencies]
 test = "2.0.0"
-bench = "1.0.0"
 
 [toolchain]
 moc = "0.11.1"
-pocket-ic = "1.0.0"
