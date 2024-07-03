@@ -105,7 +105,7 @@ mops test
 
 Run
 ```
-mops bench
+mops bench --replica pocket-ic
 ```
 
 ## Design
