@@ -81,3 +81,53 @@ do {
     assert auction.queryAssetAsks(user, ft).size() == 1;
     assert auction.queryAssetBids(user, ft).size() == 0;
 };
+
+do {
+    Prim.debugPrint("should return conflict error when placing both conflicting orders in one call");
+    let (auction, user) = init(0);
+    let ft = createFt(auction);
+    auction.processAsset(ft);
+    ignore auction.appendCredit(user, 0, 500_000_000);
+    ignore auction.appendCredit(user, ft, 500_000_000);
+    switch (
+        auction.manageOrders(
+            user,
+            [
+                #placeAsk(ft, 2_000_000, 200),
+                #placeBid(ft, 2_000, 250),
+            ],
+        )
+    ) {
+        case (#err({ index = 1; error = #ConflictingOrder(#ask, null) })) ();
+        case (_) assert false;
+    };
+    assert auction.queryAssetAsks(user, ft).size() == 0;
+    assert auction.queryAssetBids(user, ft).size() == 0;
+};
+
+do {
+    Prim.debugPrint("should place conflicting order if cancel old one in the same call");
+    let (auction, user) = init(0);
+    let ft = createFt(auction);
+    auction.processAsset(ft);
+    ignore auction.appendCredit(user, 0, 500_000_000);
+    ignore auction.appendCredit(user, ft, 500_000_000);
+    let orderId = switch (auction.placeAsk(user, ft, 2_000_000, 200)) {
+        case (#ok id) id;
+        case (_) { assert false; 0 };
+    };
+    switch (
+        auction.manageOrders(
+            user,
+            [
+                #cancelAsk(orderId),
+                #placeBid(ft, 2_000, 250),
+            ],
+        )
+    ) {
+        case (#ok(_)) ();
+        case (_) assert false;
+    };
+    assert auction.queryAssetAsks(user, ft).size() == 0;
+    assert auction.queryAssetBids(user, ft).size() == 1;
+};
