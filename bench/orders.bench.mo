@@ -1,14 +1,11 @@
 import Array "mo:base/Array";
 import Bench "mo:bench";
 import Blob "mo:base/Blob";
-import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 import Nat8 "mo:base/Nat8";
 import Prim "mo:prim";
 import Principal "mo:base/Principal";
 import Text "mo:base/Text";
-
-import Vec "mo:vector";
 
 import Auction "../src";
 

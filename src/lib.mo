@@ -608,16 +608,22 @@ module {
                             AssocList.replace<AssetId, Nat>(newBalances, chargeToken, Nat.equal, ?(balance - chargeAmount))
                             |> (newBalances := _.0);
 
-                            // build list of placed orders + orders to be placed during this call - orders to be cancelled during this call
+                            // build list of placed orders + orders to be placed during this call
                             func buildOrdersList(userList : List.List<(OrderId, Order)>, delta : OrdersDelta) : Iter.Iter<(?OrderId, Order)> = userList
                             |> List.toIter(_)
-                            |> Iter.filter<(OrderId, Order)>(_, func(orderId, o) = delta.cancelled.get(orderId) |> Option.isNull(_))
                             |> Iter.map<(OrderId, Order), (?OrderId, Order)>(_, func(oid, o) = (?oid, o))
                             |> iterConcat<(?OrderId, Order)>(_, List.toIter(delta.placed));
 
                             // validate conflicting orders
                             for ((orderId, order) in buildOrdersList(ctx.userList(userInfo), ordersDelta)) {
-                                if (order.assetId == assetId and price == order.price) {
+                                if (
+                                    order.assetId == assetId and price == order.price and (
+                                        switch (orderId) {
+                                            case (?oid) ordersDelta.cancelled.get(oid) |> Option.isNull(_);
+                                            case (null) true;
+                                        }
+                                    )
+                                ) {
                                     return #err({
                                         index = i;
                                         error = #ConflictingOrder(ctx.kind, orderId);
@@ -626,7 +632,14 @@ module {
                             };
 
                             for ((oppOrderId, oppOrder) in buildOrdersList(ctx.userOppositeList(userInfo), oppositeOrdersDelta)) {
-                                if (oppOrder.assetId == assetId and ctx.oppositeOrderConflictCriteria(price, oppOrder.price)) {
+                                if (
+                                    oppOrder.assetId == assetId and ctx.oppositeOrderConflictCriteria(price, oppOrder.price) and (
+                                        switch (oppOrderId) {
+                                            case (?oid) oppositeOrdersDelta.cancelled.get(oid) |> Option.isNull(_);
+                                            case (null) true;
+                                        }
+                                    )
+                                ) {
                                     return #err({
                                         index = i;
                                         error = #ConflictingOrder(ctx.oppositeKind, oppOrderId);
@@ -693,7 +706,8 @@ module {
                 };
             };
         };
-
+        // cancel all
+        // split argument and response lists to cancellations: { #all: { #bids, #asks, #both}, #orders: [{ #ask: OrderId, #bid: OrderId }]}, placements: ....
         public func replaceAsk(p : Principal, orderId : OrderId, volume : Nat, price : Float) : R.Result<OrderId, ReplaceOrderError> {
             let assetId = switch (queryAsk(p, orderId)) {
                 case (?ask) ask.assetId;
