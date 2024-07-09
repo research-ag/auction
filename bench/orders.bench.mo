@@ -113,40 +113,28 @@ module {
               case (#ok oids) oids;
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            (
-              ? #orders(Array.tabulate<{ #bid : Nat }>(nActions, func(i) = #bid(orderIds[i]))),
-              Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = createBidsActions[i]),
-            );
+            (? #orders(Array.tabulate<{ #bid : Nat }>(nActions, func(i) = #bid(orderIds[i]))), createBidsActions);
           };
           case (7) {
             let orderIds = switch (a.manageOrders(user, null, createBidsActions)) {
               case (#ok oids) oids;
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            (
-              ? #orders(Array.tabulate<{ #bid : Nat }>(nActions, func(i) = #bid(orderIds[nActions - 1 - i]))),
-              Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = createBidsActions[nActions - 1 - i]),
-            );
+            (? #orders(Array.tabulate<{ #bid : Nat }>(nActions, func(i) = #bid(orderIds[nActions - 1 - i]))), Array.reverse(createBidsActions));
           };
           case (8) {
             switch (a.manageOrders(user, null, createBidsActions)) {
               case (#ok oids) ();
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            (
-              ? #all(#bids(null)),
-              Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = createBidsActions[i]),
-            );
+            (? #all(#bids(null)), createBidsActions);
           };
           case (9) {
             switch (a.manageOrders(user, null, createBidsActions)) {
               case (#ok oids) ();
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            (
-              ? #all(#bids(null)),
-              Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = createBidsActions[nActions - 1 - i]),
-            );
+            (? #all(#bids(null)), Array.reverse(createBidsActions));
           };
           case (_) Prim.trap("Unknown row");
         };
