@@ -35,10 +35,14 @@ module {
     let rows = [
       "Place N bids (asc)",
       "Place N bids (desc)",
-      "Cancel N bids (asc)",
-      "Cancel N bids (desc)",
+      "Cancel N bids one by one (asc)",
+      "Cancel N bids one by one (desc)",
+      "Cancel all N bids at once",
+      "Cancel all N bids at once, filter by asset",
       "Replace N bids one by one (asc)",
       "Replace N bids one by one (desc)",
+      "Cancel all + place N bids (asc)",
+      "Cancel all + place N bids (desc)",
     ];
 
     let cols = [
@@ -53,7 +57,7 @@ module {
     bench.cols(cols);
 
     let user : Principal = principalFromNat(789);
-    let env : [(Auction.Auction, [Auction.ManageOrderAction])] = Array.tabulate<(Auction.Auction, [Auction.ManageOrderAction])>(
+    let env : [(Auction.Auction, ?Auction.CancellationAction, [Auction.PlaceOrderAction])] = Array.tabulate<(Auction.Auction, ?Auction.CancellationAction, [Auction.PlaceOrderAction])>(
       rows.size() * cols.size(),
       func(i) {
         let a = Auction.Auction(
@@ -71,54 +75,82 @@ module {
         let ?nActions = Nat.fromText(cols[col]) else Prim.trap("Cannot parse nOrders");
         ignore a.appendCredit(user, 0, 5_000_000_000_000);
 
-        let createBidsActions = Array.tabulate<Auction.ManageOrderAction>(nActions, func(i) = #placeBid(1, 100, 1.0 + Prim.intToFloat(i) / 1000.0));
+        let createBidsActions = Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = #bid(1, 100, 1.0 + Prim.intToFloat(i) / 1000.0));
 
-        let actions = switch (row) {
-          case (0) createBidsActions;
-          case (1) Array.reverse(createBidsActions);
+        let (cancellation, placements) : (?Auction.CancellationAction, [Auction.PlaceOrderAction]) = switch (row) {
+          case (0) (null, createBidsActions);
+          case (1) (null, Array.reverse(createBidsActions));
           case (2) {
-            let orderIds = switch (a.manageOrders(user, createBidsActions)) {
+            let orderIds = switch (a.manageOrders(user, null, createBidsActions)) {
               case (#ok oids) oids;
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            Array.tabulate<Auction.ManageOrderAction>(nActions, func(i) = #cancelBid(orderIds[i]));
+            (? #orders(Array.tabulate<{ #bid : Nat }>(nActions, func(i) = #bid(orderIds[i]))), []);
           };
           case (3) {
-            let orderIds = switch (a.manageOrders(user, createBidsActions)) {
+            let orderIds = switch (a.manageOrders(user, null, createBidsActions)) {
               case (#ok oids) oids;
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            Array.tabulate<Auction.ManageOrderAction>(nActions, func(i) = #cancelBid(orderIds[nActions - 1 - i]));
+            (? #orders(Array.tabulate<{ #bid : Nat }>(nActions, func(i) = #bid(orderIds[nActions - 1 - i]))), []);
           };
           case (4) {
-            let orderIds = switch (a.manageOrders(user, createBidsActions)) {
-              case (#ok oids) oids;
+            switch (a.manageOrders(user, null, createBidsActions)) {
+              case (#ok oids) ();
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            Array.tabulate<Auction.ManageOrderAction>(
-              nActions * 2,
-              func(i) = switch (i % 2) {
-                case (0) #cancelBid(orderIds[i / 2]);
-                case (_) createBidsActions[i / 2];
-              },
-            );
+            (? #all(#bids(null)), []);
           };
           case (5) {
-            let orderIds = switch (a.manageOrders(user, createBidsActions)) {
+            switch (a.manageOrders(user, null, createBidsActions)) {
+              case (#ok oids) ();
+              case (_) Prim.trap("Cannot prepare N set orders");
+            };
+            (? #all(#bids(?[1])), []);
+          };
+          case (6) {
+            let orderIds = switch (a.manageOrders(user, null, createBidsActions)) {
               case (#ok oids) oids;
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            Array.tabulate<Auction.ManageOrderAction>(
-              nActions * 2,
-              func(i) = switch (i % 2) {
-                case (0) #cancelBid(nActions - 1 - orderIds[i / 2]);
-                case (_) createBidsActions[nActions - 1 - i / 2];
-              },
+            (
+              ? #orders(Array.tabulate<{ #bid : Nat }>(nActions, func(i) = #bid(orderIds[i]))),
+              Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = createBidsActions[i]),
+            );
+          };
+          case (7) {
+            let orderIds = switch (a.manageOrders(user, null, createBidsActions)) {
+              case (#ok oids) oids;
+              case (_) Prim.trap("Cannot prepare N set orders");
+            };
+            (
+              ? #orders(Array.tabulate<{ #bid : Nat }>(nActions, func(i) = #bid(orderIds[nActions - 1 - i]))),
+              Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = createBidsActions[nActions - 1 - i]),
+            );
+          };
+          case (8) {
+            switch (a.manageOrders(user, null, createBidsActions)) {
+              case (#ok oids) ();
+              case (_) Prim.trap("Cannot prepare N set orders");
+            };
+            (
+              ? #all(#bids(null)),
+              Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = createBidsActions[i]),
+            );
+          };
+          case (9) {
+            switch (a.manageOrders(user, null, createBidsActions)) {
+              case (#ok oids) ();
+              case (_) Prim.trap("Cannot prepare N set orders");
+            };
+            (
+              ? #all(#bids(null)),
+              Array.tabulate<Auction.PlaceOrderAction>(nActions, func(i) = createBidsActions[nActions - 1 - i]),
             );
           };
           case (_) Prim.trap("Unknown row");
         };
-        (a, actions);
+        (a, cancellation, placements);
       },
     );
 
@@ -126,8 +158,8 @@ module {
       func(row, col) {
         let ?ci = Array.indexOf<Text>(col, cols, Text.equal) else Prim.trap("Cannot determine column: " # col);
         let ?ri = Array.indexOf<Text>(row, rows, Text.equal) else Prim.trap("Cannot determine row: " # row);
-        let (auction, actions) = env[ci * rows.size() + ri];
-        let res = auction.manageOrders(user, actions);
+        let (auction, cancellation, placements) = env[ci * rows.size() + ri];
+        let res = auction.manageOrders(user, cancellation, placements);
         switch (res) {
           case (#ok _) ();
           case (#err _) Prim.trap("Actions failed");
