@@ -93,7 +93,7 @@ module {
     };
 
     public type CancellationAction = {
-        #all : { #bids : ?[AssetId]; #asks : ?[AssetId]; #both : ?[AssetId] };
+        #all : ?[AssetId];
         #orders : [{ #ask : OrderId; #bid : OrderId }];
     };
 
@@ -622,29 +622,13 @@ module {
 
             switch (cancellations) {
                 case (null) {};
-                case (? #all(#asks(null))) {
-                    asksDelta.isOrderCancelled := func(_, _) = true;
-                    prepareBulkCancelation(askCtx);
-                };
-                case (? #all(#asks(?aids))) {
-                    asksDelta.isOrderCancelled := func(assetId, _) = Array.find<Nat>(aids, func(x) = x == assetId) |> not Option.isNull(_);
-                    prepareBulkCancelationWithFilter(askCtx, asksDelta.isOrderCancelled);
-                };
-                case (? #all(#bids null)) {
-                    bidsDelta.isOrderCancelled := func(_, _) = true;
-                    prepareBulkCancelation(bidCtx);
-                };
-                case (? #all(#bids(?aids))) {
-                    bidsDelta.isOrderCancelled := func(assetId, _) = Array.find<Nat>(aids, func(x) = x == assetId) |> not Option.isNull(_);
-                    prepareBulkCancelationWithFilter(bidCtx, bidsDelta.isOrderCancelled);
-                };
-                case (? #all(#both null)) {
+                case (? #all(null)) {
                     asksDelta.isOrderCancelled := func(_, _) = true;
                     bidsDelta.isOrderCancelled := func(_, _) = true;
                     prepareBulkCancelation(askCtx);
                     prepareBulkCancelation(bidCtx);
                 };
-                case (? #all(#both(?aids))) {
+                case (? #all(?aids)) {
                     asksDelta.isOrderCancelled := func(assetId, _) = Array.find<Nat>(aids, func(x) = x == assetId) |> not Option.isNull(_);
                     bidsDelta.isOrderCancelled := func(assetId, _) = Array.find<Nat>(aids, func(x) = x == assetId) |> not Option.isNull(_);
                     prepareBulkCancelationWithFilter(askCtx, asksDelta.isOrderCancelled);

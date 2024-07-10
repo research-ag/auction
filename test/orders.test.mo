@@ -168,166 +168,6 @@ do {
 };
 
 do {
-  Prim.debugPrint("should be able to cancel all asks at once...");
-  let (auction, user) = init(0);
-  let ft1 = createFt(auction);
-  let ft2 = createFt(auction);
-  ignore auction.appendCredit(user, 0, 500_000_000);
-  ignore auction.appendCredit(user, ft1, 500_000_000);
-  ignore auction.appendCredit(user, ft2, 500_000_000);
-  switch (
-    auction.manageOrders(
-      user,
-      null,
-      [
-        #bid(ft1, 2_000, 250),
-        #bid(ft1, 2_000, 300),
-        #bid(ft2, 2_000, 250),
-        #bid(ft2, 2_000, 300),
-        #ask(ft1, 2_000_000, 350),
-        #ask(ft1, 2_000_000, 400),
-        #ask(ft2, 2_000_000, 350),
-        #ask(ft2, 2_000_000, 400),
-      ],
-    )
-  ) {
-    case (#ok _) ();
-    case (_) assert false;
-  };
-  switch (auction.manageOrders(user, ? #all(#asks(null)), [])) {
-    case (#ok _) ();
-    case (_) assert false;
-  };
-  assert auction.queryAssetAsks(user, ft1).size() == 0;
-  assert auction.queryAssetBids(user, ft1).size() == 2;
-  assert auction.queryAssetAsks(user, ft2).size() == 0;
-  assert auction.queryAssetBids(user, ft2).size() == 2;
-  assert auction.queryCredit(user, 0) == 497_800_000;
-  assert auction.queryCredit(user, ft1) == 500_000_000;
-  assert auction.queryCredit(user, ft2) == 500_000_000;
-};
-
-do {
-  Prim.debugPrint("should be able to cancel all asks for single asset at once...");
-  let (auction, user) = init(0);
-  let ft1 = createFt(auction);
-  let ft2 = createFt(auction);
-  ignore auction.appendCredit(user, 0, 500_000_000);
-  ignore auction.appendCredit(user, ft1, 500_000_000);
-  ignore auction.appendCredit(user, ft2, 500_000_000);
-  switch (
-    auction.manageOrders(
-      user,
-      null,
-      [
-        #bid(ft1, 2_000, 250),
-        #bid(ft1, 2_000, 300),
-        #bid(ft2, 2_000, 250),
-        #bid(ft2, 2_000, 300),
-        #ask(ft1, 2_000_000, 350),
-        #ask(ft1, 2_000_000, 400),
-        #ask(ft2, 2_000_000, 350),
-        #ask(ft2, 2_000_000, 400),
-      ],
-    )
-  ) {
-    case (#ok _) ();
-    case (_) assert false;
-  };
-  switch (auction.manageOrders(user, ? #all(#asks(?[ft1])), [])) {
-    case (#ok _) ();
-    case (_) assert false;
-  };
-  assert auction.queryAssetAsks(user, ft1).size() == 0;
-  assert auction.queryAssetBids(user, ft1).size() == 2;
-  assert auction.queryAssetAsks(user, ft2).size() == 2;
-  assert auction.queryAssetBids(user, ft2).size() == 2;
-  assert auction.queryCredit(user, 0) == 497_800_000;
-  assert auction.queryCredit(user, ft1) == 500_000_000;
-  assert auction.queryCredit(user, ft2) == 496_000_000;
-};
-
-do {
-  Prim.debugPrint("should be able to cancel all bids at once...");
-  let (auction, user) = init(0);
-  let ft1 = createFt(auction);
-  let ft2 = createFt(auction);
-  ignore auction.appendCredit(user, 0, 500_000_000);
-  ignore auction.appendCredit(user, ft1, 500_000_000);
-  ignore auction.appendCredit(user, ft2, 500_000_000);
-  switch (
-    auction.manageOrders(
-      user,
-      null,
-      [
-        #bid(ft1, 2_000, 250),
-        #bid(ft1, 2_000, 300),
-        #bid(ft2, 2_000, 250),
-        #bid(ft2, 2_000, 300),
-        #ask(ft1, 2_000_000, 350),
-        #ask(ft1, 2_000_000, 400),
-        #ask(ft2, 2_000_000, 350),
-        #ask(ft2, 2_000_000, 400),
-      ],
-    )
-  ) {
-    case (#ok _) ();
-    case (_) assert false;
-  };
-  switch (auction.manageOrders(user, ? #all(#bids(null)), [])) {
-    case (#ok _) ();
-    case (_) assert false;
-  };
-  assert auction.queryAssetAsks(user, ft1).size() == 2;
-  assert auction.queryAssetBids(user, ft1).size() == 0;
-  assert auction.queryAssetAsks(user, ft2).size() == 2;
-  assert auction.queryAssetBids(user, ft2).size() == 0;
-  assert auction.queryCredit(user, 0) == 500_000_000;
-  assert auction.queryCredit(user, ft1) == 496_000_000;
-  assert auction.queryCredit(user, ft2) == 496_000_000;
-};
-
-do {
-  Prim.debugPrint("should be able to cancel all bids for single asset at once...");
-  let (auction, user) = init(0);
-  let ft1 = createFt(auction);
-  let ft2 = createFt(auction);
-  ignore auction.appendCredit(user, 0, 500_000_000);
-  ignore auction.appendCredit(user, ft1, 500_000_000);
-  ignore auction.appendCredit(user, ft2, 500_000_000);
-  switch (
-    auction.manageOrders(
-      user,
-      null,
-      [
-        #bid(ft1, 2_000, 250),
-        #bid(ft1, 2_000, 300),
-        #bid(ft2, 2_000, 250),
-        #bid(ft2, 2_000, 300),
-        #ask(ft1, 2_000_000, 350),
-        #ask(ft1, 2_000_000, 400),
-        #ask(ft2, 2_000_000, 350),
-        #ask(ft2, 2_000_000, 400),
-      ],
-    )
-  ) {
-    case (#ok _) ();
-    case (_) assert false;
-  };
-  switch (auction.manageOrders(user, ? #all(#bids(?[ft1])), [])) {
-    case (#ok _) ();
-    case (_) assert false;
-  };
-  assert auction.queryAssetAsks(user, ft1).size() == 2;
-  assert auction.queryAssetBids(user, ft1).size() == 0;
-  assert auction.queryAssetAsks(user, ft2).size() == 2;
-  assert auction.queryAssetBids(user, ft2).size() == 2;
-  assert auction.queryCredit(user, 0) == 498_900_000;
-  assert auction.queryCredit(user, ft1) == 496_000_000;
-  assert auction.queryCredit(user, ft2) == 496_000_000;
-};
-
-do {
   Prim.debugPrint("should be able to cancel all orders at once...");
   let (auction, user) = init(0);
   let ft1 = createFt(auction);
@@ -354,7 +194,7 @@ do {
     case (#ok _) ();
     case (_) assert false;
   };
-  switch (auction.manageOrders(user, ? #all(#both(null)), [])) {
+  switch (auction.manageOrders(user, ? #all(null), [])) {
     case (#ok _) ();
     case (_) assert false;
   };
@@ -394,7 +234,7 @@ do {
     case (#ok _) ();
     case (_) assert false;
   };
-  switch (auction.manageOrders(user, ? #all(#both(?[ft1])), [])) {
+  switch (auction.manageOrders(user, ? #all(?[ft1]), [])) {
     case (#ok _) ();
     case (_) assert false;
   };

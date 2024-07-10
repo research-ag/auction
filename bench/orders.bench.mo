@@ -99,14 +99,14 @@ module {
               case (#ok oids) ();
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            (? #all(#bids(null)), []);
+            (? #all(null), []);
           };
           case (5) {
             switch (a.manageOrders(user, null, createBidsActions)) {
               case (#ok oids) ();
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            (? #all(#bids(?[1])), []);
+            (? #all(?[1]), []);
           };
           case (6) {
             let orderIds = switch (a.manageOrders(user, null, createBidsActions)) {
@@ -127,14 +127,14 @@ module {
               case (#ok oids) ();
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            (? #all(#bids(null)), createBidsActions);
+            (? #all(null), createBidsActions);
           };
           case (9) {
             switch (a.manageOrders(user, null, createBidsActions)) {
               case (#ok oids) ();
               case (_) Prim.trap("Cannot prepare N set orders");
             };
-            (? #all(#bids(null)), Array.reverse(createBidsActions));
+            (? #all(null), Array.reverse(createBidsActions));
           };
           case (_) Prim.trap("Unknown row");
         };
