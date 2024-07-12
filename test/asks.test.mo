@@ -158,7 +158,7 @@ do {
   assert auction.queryCredit(user, ft) == 375_000_000;
 
   switch (auction.placeAsk(user, ft, 300_000_000, 125_000)) {
-    case (#err(#ConflictingOrder(#ask, oid))) assert oid == orderId;
+    case (#err(#ConflictingOrder(#ask, oid))) assert oid == ?orderId;
     case (_) assert false;
   };
   assert auction.queryCredit(user, ft) == 375_000_000;
