@@ -20,6 +20,8 @@ import RBTree "mo:base/RBTree";
 
 import Vec "mo:vector";
 
+import { calculateDeal } "./calculate-deal";
+
 module {
 
   public type AssetId = Nat;
@@ -830,72 +832,17 @@ module {
     public func processAsset(assetId : AssetId) : () {
       if (assetId == trustedAssetId) return;
       let startInstructions = settings.performanceCounter(0);
-      let inf : Float = 1 / 0; // +inf
+
       let assetInfo = Vec.get(assets, assetId);
-
-      var a = 0; // number of executed ask orders (at least partially executed)
-      let ?(na, _) = assetInfo.asks else {
+      let (asksAmount, bidsAmount, dealVolume, price) = calculateDeal<(OrderId, Order)>(
+        List.toIter<(OrderId, Order)>(assetInfo.asks),
+        List.toIter<(OrderId, Order)>(assetInfo.bids),
+        func(_, order) = order.volume,
+        func(_, order) = order.price,
+      );
+      if (asksAmount == 0 or bidsAmount == 0) {
         history := List.push((Prim.time(), sessionsCounter, assetId, 0, 0.0), history);
         return;
-      };
-      var asksTail = assetInfo.asks;
-      var nextAsk = na;
-
-      var b = 0; // number of executed buy orders (at least partially executed)
-      let ?(nb, _) = assetInfo.bids else {
-        history := List.push((Prim.time(), sessionsCounter, assetId, 0, 0.0), history);
-        return;
-      };
-      var bidsTail = assetInfo.bids;
-      var nextBid = nb;
-
-      var asksVolume = 0;
-      var bidsVolume = 0;
-
-      var lastBidToFulfil = nextBid;
-      var lastAskToFulfil = nextAsk;
-
-      let (asksAmount, bidsAmount) = label L : (Nat, Nat) loop {
-        let orig = (a, b);
-        let inc_ask = asksVolume <= bidsVolume;
-        let inc_bid = bidsVolume <= asksVolume;
-        lastAskToFulfil := nextAsk;
-        lastBidToFulfil := nextBid;
-        if (inc_ask) {
-          a += 1;
-          let ?(na, at) = asksTail else break L orig;
-          nextAsk := na;
-          asksTail := at;
-        };
-        if (inc_bid) {
-          b += 1;
-          let ?(nb, bt) = bidsTail else break L orig;
-          nextBid := nb;
-          bidsTail := bt;
-        };
-        if (nextAsk.1.price > nextBid.1.price) break L orig;
-        if (inc_ask) asksVolume += nextAsk.1.volume;
-        if (inc_bid) bidsVolume += nextBid.1.volume;
-      };
-
-      if (asksAmount == 0) {
-        // highest bid was lower than lowest ask
-        history := List.push((Prim.time(), sessionsCounter, assetId, 0, 0.0), history);
-        return;
-      };
-      // Note: asksAmount > 0 implies bidsAmount > 0
-
-      let dealVolume = Nat.min(asksVolume, bidsVolume);
-
-      let price : Float = switch (lastAskToFulfil.1.price == 0.0, lastBidToFulfil.1.price == inf) {
-        case (true, true) {
-          // market sell against market buy => no execution
-          history := List.push((Prim.time(), sessionsCounter, assetId, 0, 0.0), history);
-          return;
-        };
-        case (true, _) lastBidToFulfil.1.price; // market sell against highest bid => use bid price
-        case (_, true) lastAskToFulfil.1.price; // market buy against lowest ask => use ask price
-        case (_) (lastAskToFulfil.1.price + lastBidToFulfil.1.price) / 2; // limit sell against limit buy => use middle price
       };
 
       let assetStats = Vec.get(stats.assets, assetId);
@@ -903,7 +850,7 @@ module {
       // process fulfilled asks
       var i = 0;
       var dealVolumeLeft = dealVolume;
-      asksTail := assetInfo.asks;
+      var asksTail = assetInfo.asks;
       label b while (i < asksAmount) {
         let ?((orderId, order), next) = asksTail else Prim.trap("Can never happen: list shorter than before");
         let userInfo = order.userInfoRef;
@@ -947,7 +894,7 @@ module {
       // process fulfilled bids
       i := 0;
       dealVolumeLeft := dealVolume;
-      bidsTail := assetInfo.bids;
+      var bidsTail = assetInfo.bids;
       label b while (i < bidsAmount) {
         let ?((orderId, order), next) = bidsTail else Prim.trap("Can never happen: list shorter than before");
         let userInfo = order.userInfoRef;
