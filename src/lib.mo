@@ -21,7 +21,13 @@ import RBTree "mo:base/RBTree";
 import Vec "mo:vector";
 
 import { calculateDeal } "./calculate-deal";
-import { listFindOneAndDelete; insertWithPriority; iterConcat } "./utils";
+import {
+  sliceList;
+  sliceListWithFilter;
+  listFindOneAndDelete;
+  insertWithPriority;
+  iterConcat;
+} "./utils";
 
 module {
 
@@ -300,48 +306,6 @@ module {
 
     public func queryAsk(p : Principal, orderId : OrderId) : ?SharedOrder = queryOrder_(p, askCtx, orderId);
     public func queryBid(p : Principal, orderId : OrderId) : ?SharedOrder = queryOrder_(p, bidCtx, orderId);
-
-    private func sliceList<T>(list : List.List<T>, limit : Nat, skip : Nat) : [T] {
-      var tail = list;
-      var i = 0;
-      while (i < skip) {
-        let ?(_, next) = tail else return [];
-        tail := next;
-        i += 1;
-      };
-      let ret : Vec.Vector<T> = Vec.new();
-      i := 0;
-      label l while (i < limit) {
-        let ?(item, next) = tail else break l;
-        Vec.add(ret, item);
-        tail := next;
-        i += 1;
-      };
-      Vec.toArray(ret);
-    };
-
-    private func sliceListWithFilter<T>(list : List.List<T>, f : (item : T) -> Bool, limit : Nat, skip : Nat) : [T] {
-      var tail = list;
-      var i = 0;
-      while (i < skip) {
-        let ?(item, next) = tail else return [];
-        tail := next;
-        if (f(item)) {
-          i += 1;
-        };
-      };
-      let ret : Vec.Vector<T> = Vec.new();
-      i := 0;
-      label l while (i < limit) {
-        let ?(item, next) = tail else break l;
-        if (f(item)) {
-          Vec.add(ret, item);
-          i += 1;
-        };
-        tail := next;
-      };
-      Vec.toArray(ret);
-    };
 
     public func queryTransactionHistory(p : Principal, assetId : ?AssetId, limit : Nat, skip : Nat) : [TransactionHistoryItem] {
       let ?userInfo = users.get(p) else return [];
