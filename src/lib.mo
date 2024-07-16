@@ -92,13 +92,13 @@ module {
   public type StableAssetInfo = {
     asks : AssocList.AssocList<OrderId, Order>;
     bids : AssocList.AssocList<OrderId, Order>;
-    lastSwapRate : Float;
+    lastRate : Float;
   };
 
   public type AssetInfo = {
     var asks : AssocList.AssocList<OrderId, Order>;
     var bids : AssocList.AssocList<OrderId, Order>;
-    var lastSwapRate : Float;
+    var lastRate : Float;
   };
 
   public type CancellationAction = {
@@ -219,7 +219,7 @@ module {
             var askCounter = 0;
             var bids = List.nil();
             var bidCounter = 0;
-            var lastSwapRate = 0;
+            var lastRate = 0;
           } : AssetInfo
         )
         |> Vec.add(assets, _);
@@ -897,7 +897,7 @@ module {
       };
       assetInfo.bids := bidsTail;
 
-      assetInfo.lastSwapRate := price;
+      assetInfo.lastRate := price;
       // append to asset history
       history := List.push((Prim.time(), sessionsCounter, assetId, dealVolume, price), history);
       assetStats.lastProcessingInstructions := Nat64.toNat(settings.performanceCounter(0) - startInstructions);
@@ -910,7 +910,7 @@ module {
         func(x) = {
           asks = x.asks;
           bids = x.bids;
-          lastSwapRate = x.lastSwapRate;
+          lastRate = x.lastRate;
         },
       );
       stats = {
@@ -939,7 +939,7 @@ module {
         func(x) = {
           var asks = x.asks;
           var bids = x.bids;
-          var lastSwapRate = x.lastSwapRate;
+          var lastRate = x.lastRate;
         },
       );
       stats := {
