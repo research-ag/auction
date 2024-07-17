@@ -3,14 +3,14 @@ import Nat "mo:base/Nat";
 
 module {
 
-  public func calculateDeal<Order>(
+  type Order = (price : Float, volume : Nat);
+
+  public func matchOrders(
     asks : Iter.Iter<Order>,
     bids : Iter.Iter<Order>,
-    getVolume : (Order) -> Nat,
-    getPrice : (Order) -> Float,
   ) : (
-    asksAmount : Nat,
-    bidsAmount : Nat,
+    nAsks : Nat,
+    nBids : Nat,
     volume : Nat,
     price : Float,
   ) {
@@ -51,9 +51,9 @@ module {
           nextBid := nb;
         };
       };
-      if (getPrice(nextAsk) > getPrice(nextBid)) break L orig;
-      if (inc_ask) asksVolume += getVolume(nextAsk);
-      if (inc_bid) bidsVolume += getVolume(nextBid);
+      if (nextAsk.0 > nextBid.0) break L orig;
+      if (inc_ask) asksVolume += nextAsk.1;
+      if (inc_bid) bidsVolume += nextBid.1;
     };
 
     // highest bid was lower than lowest ask
@@ -66,12 +66,12 @@ module {
       asksAmount,
       bidsAmount,
       Nat.min(asksVolume, bidsVolume),
-      switch (getPrice(lastAskToFulfil) == 0.0, getPrice(lastBidToFulfil) == inf) {
+      switch (lastAskToFulfil.0 == 0.0, lastBidToFulfil.0 == inf) {
         // market sell against market buy => no execution
         case (true, true) return (0, 0, 0, 0.0);
-        case (true, _) getPrice(lastBidToFulfil); // market sell against highest bid => use bid price
-        case (_, true) getPrice(lastAskToFulfil); // market buy against lowest ask => use ask price
-        case (_) (getPrice(lastAskToFulfil) + getPrice(lastBidToFulfil)) / 2; // limit sell against limit buy => use middle price
+        case (true, _) lastBidToFulfil.0; // market sell against highest bid => use bid price
+        case (_, true) lastAskToFulfil.0; // market buy against lowest ask => use ask price
+        case (_) (lastAskToFulfil.0 + lastBidToFulfil.0) / 2; // limit sell against limit buy => use middle price
       },
     );
   };

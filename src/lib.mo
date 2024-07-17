@@ -20,7 +20,7 @@ import RBTree "mo:base/RBTree";
 
 import Vec "mo:vector";
 
-import { calculateDeal } "./calculate-deal";
+import { matchOrders } "./match-orders";
 import {
   sliceList;
   sliceListWithFilter;
@@ -799,13 +799,12 @@ module {
       let startInstructions = settings.performanceCounter(0);
 
       let assetInfo = Vec.get(assets, assetId);
-      let (asksAmount, bidsAmount, dealVolume, price) = calculateDeal<(OrderId, Order)>(
-        List.toIter<(OrderId, Order)>(assetInfo.asks),
-        List.toIter<(OrderId, Order)>(assetInfo.bids),
-        func(_, order) = order.volume,
-        func(_, order) = order.price,
-      );
-      if (asksAmount == 0 or bidsAmount == 0) {
+      let mapOrders = func(orders : List.List<(OrderId, Order)>) : Iter.Iter<(Float, Nat)> = orders
+      |> List.toIter<(OrderId, Order)>(_)
+      |> Iter.map<(OrderId, Order), (Float, Nat)>(_, func(_, order) = (order.price, order.volume));
+
+      let (nAsks, nBids, dealVolume, price) = matchOrders(mapOrders(assetInfo.asks), mapOrders(assetInfo.bids));
+      if (nAsks == 0 or nBids == 0) {
         history := List.push((Prim.time(), sessionsCounter, assetId, 0, 0.0), history);
         return;
       };
@@ -816,11 +815,11 @@ module {
       var i = 0;
       var dealVolumeLeft = dealVolume;
       var asksTail = assetInfo.asks;
-      label b while (i < asksAmount) {
+      label b while (i < nAsks) {
         let ?((orderId, order), next) = asksTail else Prim.trap("Can never happen: list shorter than before");
         let userInfo = order.userInfoRef;
         // update ask in user info and calculate real ask volume
-        let volume = if (i + 1 == asksAmount and dealVolumeLeft != order.volume) {
+        let volume = if (i + 1 == nAsks and dealVolumeLeft != order.volume) {
           order.volume -= dealVolumeLeft;
           dealVolumeLeft;
         } else {
@@ -860,11 +859,11 @@ module {
       i := 0;
       dealVolumeLeft := dealVolume;
       var bidsTail = assetInfo.bids;
-      label b while (i < bidsAmount) {
+      label b while (i < nBids) {
         let ?((orderId, order), next) = bidsTail else Prim.trap("Can never happen: list shorter than before");
         let userInfo = order.userInfoRef;
         // update bid in user info and calculate real bid volume
-        let volume = if (i + 1 == bidsAmount and dealVolumeLeft != order.volume) {
+        let volume = if (i + 1 == nBids and dealVolumeLeft != order.volume) {
           order.volume -= dealVolumeLeft;
           dealVolumeLeft;
         } else {
