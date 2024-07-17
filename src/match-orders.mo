@@ -31,7 +31,7 @@ module {
     var lastBidToFulfil = nextBid;
     var lastAskToFulfil = nextAsk;
 
-    let (asksAmount, bidsAmount) = label L : (Nat, Nat) loop {
+    let (nAsks, nBids) = label L : (Nat, Nat) loop {
       let orig = (a, b);
       let inc_ask = asksVolume <= bidsVolume;
       let inc_bid = bidsVolume <= asksVolume;
@@ -57,14 +57,14 @@ module {
     };
 
     // highest bid was lower than lowest ask
-    if (asksAmount == 0) {
+    if (nAsks == 0) {
       return (0, 0, 0, 0.0);
     };
-    // Note: asksAmount > 0 implies bidsAmount > 0
+    // Note: nAsks > 0 implies nBids > 0
 
     (
-      asksAmount,
-      bidsAmount,
+      nAsks,
+      nBids,
       Nat.min(asksVolume, bidsVolume),
       switch (lastAskToFulfil.0 == 0.0, lastBidToFulfil.0 == inf) {
         // market sell against market buy => no execution
