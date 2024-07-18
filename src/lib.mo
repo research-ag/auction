@@ -11,14 +11,14 @@ module {
 
   public type Order = (price : Float, volume : Nat);
 
-  class OrderSide(iter : Iter.Iter<Order>) {
+  class OrderSide(next_ : () -> ?Order) {
     public var price : Float = 0;
     public var volume : Nat = 0;
     public var index : Nat = 0;
     var next : Order = (0, 0);
 
     public func peek() : Bool {
-      switch (iter.next()) {
+      switch (next_()) {
         case (?x) { next := x; true };
         case (null) false;
       };
@@ -68,8 +68,8 @@ module {
 
     let inf : Float = 1 / 0; // +inf
 
-    let asks = OrderSide(asks_);
-    let bids = OrderSide(bids_);
+    let asks = OrderSide(asks_.next);
+    let bids = OrderSide(bids_.next);
 
     label L loop {
       let inc_ask = asks.volume <= bids.volume;
