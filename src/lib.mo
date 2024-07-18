@@ -33,24 +33,40 @@ module {
     };
   };
 
-  /// Matches asks and bids for auction functionality.
+  /// Matching algorithm for a volume-maximising auction
   ///
-  /// This function iterates over asks and bids and matches them based on their prices and volumes.
-  /// It returns the number of ask and bid orders to be fulfilled, the total volume of matched orders, and the execution price.
+  /// Suppose we have a single trading pair with base currency X and quote currency Y.
+  /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price. 
+  /// The algorithm will then find the price point at which the maximum volume of orders can be executed.
+  /// It returns that price and the volume that can be executed at that price.
+  /// 
+  /// In a volume-maximising auction all participants get their trades executed in one event,
+  /// at the same time and at the same price.
+  /// Or, if their orders missed the execution price then they are not eecuted at all.
+  ///
+  /// A bid order and ask order is a pair of price (type Float) and volume (type Nat).
+  /// The price is denominated in Y and the volume is denominated in X.
+  /// The price means the price for the smallest unit of Y and is measured in the smallest unit of X.
+  /// The volume is measured in the smallest unit of Y.
+  ///
+  /// This function walks along ascending price and, for each price point, accumulates all ask orders up to that price.
+  /// Simultaneously, it walks along descending price and, for each price point, accumulates all bid orders above that price.
+  /// The algorithm is designed such that when the two walks meet then that price point is the one that maximises the exchange volume,
+  /// if everyone gets their orders executed at the same price or not at all.
   ///
   /// # Parameters:
-  /// - `asks: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the ask orders.
-  /// - `bids: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the bid orders.
+  /// - `asks: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the ask orders. Must be in ascending order of price.
+  /// - `bids: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the bid orders. Must be in descending order of price.
   ///
   /// # Returns:
-  /// - `nAsks: Nat`: The number of executed ask orders (at least partially executed).
-  /// - `nBids: Nat`: The number of executed bid orders (at least partially executed).
-  /// - `volume: Nat`: The total volume of matched orders.
-  /// - `price: Float`: The execution price of the matched orders.
+  /// - `nAsks: Nat`: The number of executed ask orders from the input iterator (at least partially executed).
+  /// - `nBids: Nat`: The number of executed bid orders from the input iterator (at least partially executed).
+  /// - `volume: Nat`: The total volume at the determined price.
+  /// - `price: Float`: The execution price that maximises volume.
   ///
   /// # Notes:
-  /// - The function assumes that ask orders are sorted in ascending order of price, and bid orders are sorted in descending order of price.
-  /// - The function returns (0, 0, 0, 0.0) if no match is found.
+  /// - The function returns (0, 0, 0, 0.0) if no order match, i.e. when the volume is 0.
+  /// - The function is primarily designed for limit order but it can handle market orders as well. A market ask order is modeled by having an ask price of 0. A market bid order is modeled by having an ask price of +inf.
   /// - The execution price is determined as follows:
   ///   - If both the highest bid and the lowest ask are market orders (price 0.0 for sell and +inf for buy), no execution occurs.
   ///   - If the highest bid is a market order, the price is the price of the highest ask to be fulfilled.
