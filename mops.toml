@@ -7,12 +7,12 @@ keywords = [ "auction" ]
 license = "Apache-2.0"
 
 [dependencies]
-base = "0.11.1"
+base = "0.11.3"
 
 [dev-dependencies]
 test = "2.0.0"
 bench = "1.0.0"
 
 [toolchain]
-moc = "0.11.1"
+moc = "0.11.3"
 pocket-ic = "1.0.0"

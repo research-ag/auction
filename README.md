@@ -49,6 +49,11 @@ mops test
 
 ### Benchmark
 
+Run
+```
+mops bench --replica pocket-ic
+```
+
 ## Design
 
 ## Implementation notes
