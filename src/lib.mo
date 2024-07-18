@@ -9,7 +9,29 @@ import Nat "mo:base/Nat";
 
 module {
 
-  type Order = (price : Float, volume : Nat);
+  public type Order = (price : Float, volume : Nat);
+
+  class OrderSide(iter : Iter.Iter<Order>) {
+    public var price : Float = 0;
+    public var volume : Nat = 0;
+    public var index : Nat = 0;
+    var next : Order = (0, 0);
+
+    public func peek() : Bool {
+      switch (iter.next()) {
+        case (?x) { next := x; true };
+        case (null) false;
+      };
+    };
+
+    public func peekPrice() : Float = next.0;
+
+    public func pop() {
+      index += 1;
+      price := next.0;
+      volume += next.1;
+    };
+  };
 
   /// Matches asks and bids for auction functionality.
   ///
@@ -35,8 +57,8 @@ module {
   ///   - If the lowest ask is a market order, the price is the price of the lowest bid to be fulfilled.
   ///   - Otherwise, the price is the average of the last fulfilled bid and the last fulfilled ask.
   public func matchOrders(
-    asks : Iter.Iter<Order>,
-    bids : Iter.Iter<Order>,
+    asks_ : Iter.Iter<Order>,
+    bids_ : Iter.Iter<Order>,
   ) : (
     nAsks : Nat,
     nBids : Nat,
@@ -46,61 +68,35 @@ module {
 
     let inf : Float = 1 / 0; // +inf
 
-    var a = 0; // number of executed ask orders (at least partially executed)
-    let ?na = asks.next() else return (0, 0, 0, 0.0);
-    var nextAsk = na;
+    let asks = OrderSide(asks_);
+    let bids = OrderSide(bids_);
 
-    var b = 0; // number of executed bid orders (at least partially executed)
-    let ?nb = bids.next() else return (0, 0, 0, 0.0);
-    var nextBid = nb;
-
-    var asksVolume = 0;
-    var bidsVolume = 0;
-
-    var lastBidToFulfil = nextBid;
-    var lastAskToFulfil = nextAsk;
-
-    let (nAsks, nBids) = label L : (Nat, Nat) loop {
-      let orig = (a, b);
-      let inc_ask = asksVolume <= bidsVolume;
-      let inc_bid = bidsVolume <= asksVolume;
-      lastAskToFulfil := nextAsk;
-      lastBidToFulfil := nextBid;
-      if (inc_ask) {
-        a += 1;
-        if (a > 1) {
-          let ?na = asks.next() else break L orig;
-          nextAsk := na;
-        };
-      };
-      if (inc_bid) {
-        b += 1;
-        if (b > 1) {
-          let ?nb = bids.next() else break L orig;
-          nextBid := nb;
-        };
-      };
-      if (nextAsk.0 > nextBid.0) break L orig;
-      if (inc_ask) asksVolume += nextAsk.1;
-      if (inc_bid) bidsVolume += nextBid.1;
+    label L loop {
+      let inc_ask = asks.volume <= bids.volume;
+      let inc_bid = bids.volume <= asks.volume;
+      if (inc_ask and not asks.peek()) break L;
+      if (inc_bid and not bids.peek()) break L;
+      if (bids.peekPrice() < asks.peekPrice()) break L;
+      if (inc_ask) asks.pop();
+      if (inc_bid) bids.pop();
     };
 
     // highest bid was lower than lowest ask
-    if (nAsks == 0) {
+    if (asks.index == 0) {
       return (0, 0, 0, 0.0);
     };
     // Note: nAsks > 0 implies nBids > 0
 
     (
-      nAsks,
-      nBids,
-      Nat.min(asksVolume, bidsVolume),
-      switch (lastAskToFulfil.0 == 0.0, lastBidToFulfil.0 == inf) {
+      asks.index,
+      bids.index,
+      Nat.min(asks.volume, bids.volume),
+      switch (asks.price == 0.0, bids.price == inf) {
         // market sell against market buy => no execution
         case (true, true) return (0, 0, 0, 0.0);
-        case (true, _) lastBidToFulfil.0; // market sell against highest bid => use bid price
-        case (_, true) lastAskToFulfil.0; // market buy against lowest ask => use ask price
-        case (_) (lastAskToFulfil.0 + lastBidToFulfil.0) / 2; // limit sell against limit buy => use middle price
+        case (true, _) bids.price; // market sell against highest bid => use bid price
+        case (_, true) asks.price; // market buy against lowest ask => use ask price
+        case (_) (asks.price + bids.price) / 2; // limit sell against limit buy => use middle price
       },
     );
   };
