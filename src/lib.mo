@@ -11,6 +11,29 @@ module {
 
   type Order = (price : Float, volume : Nat);
 
+  /// Matches asks and bids for auction functionality.
+  ///
+  /// This function iterates over asks and bids and matches them based on their prices and volumes.
+  /// It returns the number of ask and bid orders to be fulfilled, the total volume of matched orders, and the execution price.
+  ///
+  /// # Parameters:
+  /// - `asks: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the ask orders.
+  /// - `bids: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the bid orders.
+  ///
+  /// # Returns:
+  /// - `nAsks: Nat`: The number of executed ask orders (at least partially executed).
+  /// - `nBids: Nat`: The number of executed bid orders (at least partially executed).
+  /// - `volume: Nat`: The total volume of matched orders.
+  /// - `price: Float`: The execution price of the matched orders.
+  ///
+  /// # Notes:
+  /// - The function assumes that ask orders are sorted in ascending order of price, and bid orders are sorted in descending order of price.
+  /// - The function returns (0, 0, 0, 0.0) if no match is found.
+  /// - The execution price is determined as follows:
+  ///   - If both the highest bid and the lowest ask are market orders (price 0.0 for sell and +inf for buy), no execution occurs.
+  ///   - If the highest bid is a market order, the price is the price of the highest ask to be fulfilled.
+  ///   - If the lowest ask is a market order, the price is the price of the lowest bid to be fulfilled.
+  ///   - Otherwise, the price is the average of the last fulfilled bid and the last fulfilled ask.
   public func matchOrders(
     asks : Iter.Iter<Order>,
     bids : Iter.Iter<Order>,
