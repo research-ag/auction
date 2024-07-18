@@ -85,7 +85,7 @@ module {
     if (asks.index == 0) {
       return (0, 0, 0, 0.0);
     };
-    // Note: nAsks > 0 implies nBids > 0
+    // Note: asks.index > 0 implies bids.index > 0
 
     (
       asks.index,
