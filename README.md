@@ -63,24 +63,23 @@ assert price == 60.0;
 
 
 ```motoko
-//@package auction research-ag/auction/rc-0.0.1/src
 import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 
 import { matchOrders } "mo:auction";
 
 let asks = Iter.fromArray<(Float, Nat)>([
-(0.0, 10000),
+  (0.0, 10000),
 ]);
 let bids = Iter.fromArray<(Float, Nat)>([
-(100.0, 2000),
-(90.0, 2000),
-(80.0, 2000),
-(70.0, 2000),
-(60.0, 2000),
-// do not filfil: out of volume
-(50.0, 2000),
-(40.0, 2000),
+  (100.0, 2000),
+  (90.0, 2000),
+  (80.0, 2000),
+  (70.0, 2000),
+  (60.0, 2000),
+  // do not filfil: out of volume
+  (50.0, 2000),
+  (40.0, 2000),
 ]);
 
 let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
@@ -93,7 +92,7 @@ assert price == 60.0;
 (nAsks, nBids, volume, price);
 ```
 
-[Executable version of above example](https://embed.motoko.org/motoko/g/2p8EnPm2FU2kp8Bw1YaoRsUkhAsnTQYJ9peMjnvwtL5tyMVEtLGWM6id2oYYSc81hQuKxJik9TUCPCvdtGTmPUCT6piD3XPQSz2ZopR9Tru6gL76oQhgHak2sei78aVjuHbvs6qEJW34wqkzXsK6k7M3oZav9Ajan3TXpts8eug4frqdw9xCGHPrZSPyTgzqD1cVwapChDRrnrbceK47hMLHhqAJm3Svphu4RJNauoiHuikimJss8JaqLg1UKYn84mN4BVk1id5Y9bDjCc7kVKB3avf8SpXK7Y8pAxXxxkGYkQw1EdYzCh8p2mJTC6ho82Q2NB62rhqm22J4TN1aTPoMgNawTB85iJBHoGMg17o3gNQACScrRCGkq75oi59keaBdqrnncJHeiftLfWEM6jh7Z?lines=29)
+[Executable version of above example](https://embed.motoko.org/motoko/g/2Dugb2J1Nhm62uibeFHhf7gxxVFq3nHa9A9EBdWppt9gdGCKEjzGRD2wbD18gYjEbubzcwVcTHH6zPnuuYj2g2MBT845gVeEZs3ZSvczGcfHKJTALNFJ888TWTrKgq532W1AZW24WC1fMfb3fcD9sXLbyKyFsSzH9HVxHj3D193t2dZJsDxuKQ745Yzr26Q82rPVWWLMpWKvGWQZ5HJdLv9xQ3ee94kcryXppTxbrjNyT3pMyTqduK7wHwBT3iETNTtf59WbQm1NsP6Lbz8psMefKX3uvUB2iFkxnj9tKKXc2nqLvT4FdN3y77Vxs6FNEv6G41TLL31iLwjFcaBmgTxZB2xLoBbHdUG9zSYxsyeLEAV8tSXT4ppC2hza4AJD4NnKMW1HVKQhtrDnEeekK?lines=29)
 
 ### Build & test
 
