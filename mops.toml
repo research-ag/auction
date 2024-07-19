@@ -1,18 +1,17 @@
 [package]
-name = ""
+name = "auction"
 version = "0.0.1"
-description = ""
-repository = "https://github.com/research-ag/..."
-keywords = [ ]
+description = "Matching algorithm for volume maximising single-price auction"
+repository = "https://github.com/research-ag/auction"
+keywords = [ "exchange", "tokens" ]
 license = "Apache-2.0"
 
 [dependencies]
-base = "0.11.1"
+base = "0.11.3"
 
 [dev-dependencies]
 test = "2.0.0"
 bench = "1.0.0"
 
 [toolchain]
-moc = "0.11.1"
-pocket-ic = "1.0.0"
+moc = "0.11.3"
