@@ -71,6 +71,8 @@ assert price == 60.0;
 
 [Executable version of above example](https://embed.motoko.org/motoko/g/dUik8CbSbJXFuwUGR8DsHmA5ruvR25cqu8cV3Y47Yufq4PqdNJwv2Y4YrV4RfaQzoEG4usqbGLuWW2e5zbc8NB721o3sRKkkmeLbpraJQm3k1Hvwfcq3wWZY3B2crSwYtE4VePuUJvzQv9Fg1yXRMiuk3DxUh65hn1RXCL71GfecFi8sjL22shfbx6yqJSw5WUs1qr9CRMeNJanMmoobuwdgAsDAY3KNxXjKyPHWNnhpiLt356zCTyqm5uhBrE1vAsgQBHAEPHXv5ujz9NJkeCvtUeySxxKJBfzKtfV5yvJGgSTBbk7hVnG3JFk4wVatAfZTmVKD12W1RVZCnMWHj5NkFVZ1n9c33d6?lines=26)
 
+In the above example we see three asks and bids that could individually be matched to each other at three different prices for a total volume of 30,000.
+But at a single price the highest volume possible is 20,000 and it is reached at the price of 60.
 
 ```motoko
 import Principal "mo:base/Principal";
@@ -103,6 +105,10 @@ assert price == 60.0;
 ```
 
 [Executable version of above example](https://embed.motoko.org/motoko/g/2Dugb2J1Nhm62uibeFHhf7gxxVFq3nHa9A9EBdWppt9gdGCKEjzGRD2wbD18gYjEbubzcwVcTHH6zPnuuYj2g2MBT845gVeEZs3ZSvczGcfHKJTALNFJ888TWTrKgq532W1AZW24WC1fMfb3fcD9sXLbyKyFsSzH9HVxHj3D193t2dZJsDxuKQ745Yzr26Q82rPVWWLMpWKvGWQZ5HJdLv9xQ3ee94kcryXppTxbrjNyT3pMyTqduK7wHwBT3iETNTtf59WbQm1NsP6Lbz8psMefKX3uvUB2iFkxnj9tKKXc2nqLvT4FdN3y77Vxs6FNEv6G41TLL31iLwjFcaBmgTxZB2xLoBbHdUG9zSYxsyeLEAV8tSXT4ppC2hza4AJD4NnKMW1HVKQhtrDnEeekK?lines=29)
+
+In the above example we see a single market sell order (ask)
+which is fully matched by multiple buy orders.
+The price is the highest price needed to fully match the sell order.
 
 ### Build & test
 
