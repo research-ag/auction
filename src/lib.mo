@@ -7,11 +7,13 @@
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 
-/// Matching algorithm for a volume-maximising auction
+/// Matching algorithm for a volume maximising single-price auction
 ///
-/// This is an auction in which participants place limit orders or market orders which are usually hidden from the public.
-/// When the auction happens then the matching algorithm finds the price point at which the maximum volume of orders can be executed.
-/// Then all participants get their trades executed in one event, at the same time and at the same price.
+/// This is an auction in which participants place limit orders or market orders ahead of time
+/// and the order book is usually hidden from the public.
+/// When the auction happens then the matching algorithm from this package runs.
+/// It finds the single price point at which the maximum volume of orders can be executed.
+/// Then all participants will get their trades executed in one event, at the same time and at the same price.
 module {
 
   public type Order = (price : Float, volume : Nat);
@@ -38,14 +40,14 @@ module {
     };
   };
 
-  /// Matching algorithm for a volume-maximising auction
+  /// Matching algorithm for a volume maximising single-price auction
   ///
   /// Suppose we have a single trading pair with base currency X and quote currency Y.
   /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price. 
   /// The algorithm will then find the price point at which the maximum volume of orders can be executed.
   /// It returns that price and the volume that can be executed at that price.
   /// 
-  /// In a volume-maximising auction all participants get their trades executed in one event,
+  /// In a volume maximising auction all participants get their trades executed in one event,
   /// at the same time and at the same price.
   /// Or, if their orders missed the execution price then they are not eecuted at all.
   ///

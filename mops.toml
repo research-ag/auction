@@ -1,7 +1,7 @@
 [package]
 name = "auction"
 version = "0.0.1"
-description = 'A module which implements auction functionality'
+description = "Matching algorithm for volume maximising single-price auction"
 repository = "https://github.com/research-ag/auction"
 keywords = [ "auction" ]
 license = "Apache-2.0"

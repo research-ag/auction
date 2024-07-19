@@ -3,6 +3,13 @@
 ## Overview
 
 A module which implements auction functionality
+with a volume maximising single-price auction.
+
+Auction participants place limit orders or market orders ahead of time
+and the order book is usually hidden from the public.
+When the auction happens then the matching algorithm from this package runs.
+It finds the single price point at which the maximum volume of orders can be executed.
+Then all participants will get their trades executed in one event, at the same time and at the same price.
 
 ### Links
 
