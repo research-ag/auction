@@ -3,7 +3,7 @@ name = "auction"
 version = "0.0.1"
 description = "Matching algorithm for volume maximising single-price auction"
 repository = "https://github.com/research-ag/auction"
-keywords = [ "auction" ]
+keywords = [ "exchange", "tokens" ]
 license = "Apache-2.0"
 
 [dependencies]
