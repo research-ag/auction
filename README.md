@@ -1,3 +1,6 @@
+[![mops](https://oknww-riaaa-aaaam-qaf6a-cai.raw.ic0.app/badge/mops/auction)](https://mops.one/auction)
+[![documentation](https://oknww-riaaa-aaaam-qaf6a-cai.raw.ic0.app/badge/documentation/auction)](https://mops.one/auction/docs)
+
 # Auction for Motoko
 
 ## Overview
