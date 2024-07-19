@@ -7,36 +7,86 @@
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 
+/// Matching algorithm for a volume-maximising auction
+///
+/// This is an auction in which participants place limit orders or market orders which are usually hidden from the public.
+/// When the auction happens then the matching algorithm finds the price point at which the maximum volume of orders can be executed.
+/// Then all participants get their trades executed in one event, at the same time and at the same price.
 module {
 
-  type Order = (price : Float, volume : Nat);
+  public type Order = (price : Float, volume : Nat);
 
-  /// Matches asks and bids for auction functionality.
+  class OrderSide(next_ : () -> ?Order) {
+    public var price : Float = 0;
+    public var volume : Nat = 0;
+    public var index : Nat = 0;
+    var next : Order = (0, 0);
+
+    public func peek() : Bool {
+      switch (next_()) {
+        case (?x) { next := x; true };
+        case (null) false;
+      };
+    };
+
+    public func peekPrice() : Float = next.0;
+
+    public func pop() {
+      index += 1;
+      price := next.0;
+      volume += next.1;
+    };
+  };
+
+  /// Matching algorithm for a volume-maximising auction
   ///
-  /// This function iterates over asks and bids and matches them based on their prices and volumes.
-  /// It returns the number of ask and bid orders to be fulfilled, the total volume of matched orders, and the execution price.
+  /// Suppose we have a single trading pair with base currency X and quote currency Y.
+  /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price. 
+  /// The algorithm will then find the price point at which the maximum volume of orders can be executed.
+  /// It returns that price and the volume that can be executed at that price.
+  /// 
+  /// In a volume-maximising auction all participants get their trades executed in one event,
+  /// at the same time and at the same price.
+  /// Or, if their orders missed the execution price then they are not eecuted at all.
+  ///
+  /// A bid order and ask order is a pair of price (type Float) and volume (type Nat).
+  /// The price is denominated in Y and the volume is denominated in X.
+  /// The price means the price for the smallest unit of Y and is measured in the smallest unit of X.
+  /// The volume is measured in the smallest unit of Y.
+  ///
+  /// Roughly speaking, the algorithm works as follows:
+  /// We walk along ascending price on the ask side and, for each price point, accumulates the volume of all ask orders up to that price.
+  /// Simultaneously, we walk along descending price on the bid side and, for each price point, accumulates the volume of all bid orders above that price.
+  /// The two walks are coordinated such that the side which has the lower accumulated volume walks takes the next step, until that side's volume overtakes the accumulated volume of the side.
+  /// Then the other side takes the next step, etc.
+  /// When the two walks meet in price then we have found the price point at which the maximum volume can be executed.
+  /// During execution all participants will get executed at the same price, regardless of their actual order price.
+  /// All orders whose volume was accumulated during the walks will be executed.
+  /// We say these order were "matched".
   ///
   /// # Parameters:
-  /// - `asks: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the ask orders.
-  /// - `bids: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the bid orders.
+  /// - `asks: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
+  /// - `bids: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
   ///
   /// # Returns:
-  /// - `nAsks: Nat`: The number of executed ask orders (at least partially executed).
-  /// - `nBids: Nat`: The number of executed bid orders (at least partially executed).
-  /// - `volume: Nat`: The total volume of matched orders.
-  /// - `price: Float`: The execution price of the matched orders.
+  /// - `nAsks: Nat`: The number of ask orders, starting from the beginning of the input iterator, that were matched. The last one could be partially matched and all other ones were fully matched.
+  /// - `nBids: Nat`: The number of bid orders, starting from the beginning of the input iterator, that were matched. The last one could be partially matched and all other ones were fully matched.
+  /// - `volume: Nat`: The total matched volume at the determined price.
+  /// - `price: Float`: The determined execution price that maximises volume.
   ///
-  /// # Notes:
-  /// - The function assumes that ask orders are sorted in ascending order of price, and bid orders are sorted in descending order of price.
-  /// - The function returns (0, 0, 0, 0.0) if no match is found.
-  /// - The execution price is determined as follows:
-  ///   - If both the highest bid and the lowest ask are market orders (price 0.0 for sell and +inf for buy), no execution occurs.
-  ///   - If the highest bid is a market order, the price is the price of the highest ask to be fulfilled.
-  ///   - If the lowest ask is a market order, the price is the price of the lowest bid to be fulfilled.
-  ///   - Otherwise, the price is the average of the last fulfilled bid and the last fulfilled ask.
+  /// The function is primarily designed for limit orders but it can handle market orders as well.
+  /// A market ask order is modeled by having an ask price of 0.
+  /// A market bid order is modeled by having an ask price of +inf.
+  ///
+  /// The price is determined by the lowest matched bid order and the highest matched ask order. 
+  /// - If no orders were matched, i.e. the volume is 0, then the function returns (0, 0, 0, 0.0).
+  /// - If on both sides only market orders are matched, i.e. no limit order on either side was matched, then no execution occurs. This is because it is impossible to determine a price from 0 and +inf.
+  /// - If the lowest matched bid is a market order, then the execution price is equal to the price of the highest matched ask.
+  /// - If the highest matched ask is a market order, then the execution price is equal to the price of the lowest matched bid.
+  /// - Otherwise, the price is the middle between the highest matches ask and lowest matched bid.
   public func matchOrders(
-    asks : Iter.Iter<Order>,
-    bids : Iter.Iter<Order>,
+    asks_ : Iter.Iter<Order>,
+    bids_ : Iter.Iter<Order>,
   ) : (
     nAsks : Nat,
     nBids : Nat,
@@ -46,61 +96,34 @@ module {
 
     let inf : Float = 1 / 0; // +inf
 
-    var a = 0; // number of executed ask orders (at least partially executed)
-    let ?na = asks.next() else return (0, 0, 0, 0.0);
-    var nextAsk = na;
+    let asks = OrderSide(asks_.next);
+    let bids = OrderSide(bids_.next);
 
-    var b = 0; // number of executed bid orders (at least partially executed)
-    let ?nb = bids.next() else return (0, 0, 0, 0.0);
-    var nextBid = nb;
-
-    var asksVolume = 0;
-    var bidsVolume = 0;
-
-    var lastBidToFulfil = nextBid;
-    var lastAskToFulfil = nextAsk;
-
-    let (nAsks, nBids) = label L : (Nat, Nat) loop {
-      let orig = (a, b);
-      let inc_ask = asksVolume <= bidsVolume;
-      let inc_bid = bidsVolume <= asksVolume;
-      lastAskToFulfil := nextAsk;
-      lastBidToFulfil := nextBid;
-      if (inc_ask) {
-        a += 1;
-        if (a > 1) {
-          let ?na = asks.next() else break L orig;
-          nextAsk := na;
-        };
-      };
-      if (inc_bid) {
-        b += 1;
-        if (b > 1) {
-          let ?nb = bids.next() else break L orig;
-          nextBid := nb;
-        };
-      };
-      if (nextAsk.0 > nextBid.0) break L orig;
-      if (inc_ask) asksVolume += nextAsk.1;
-      if (inc_bid) bidsVolume += nextBid.1;
+    label L loop {
+      let inc_ask = asks.volume <= bids.volume;
+      let inc_bid = bids.volume <= asks.volume;
+      if (inc_ask and not asks.peek()) break L;
+      if (inc_bid and not bids.peek()) break L;
+      if (bids.peekPrice() < asks.peekPrice()) break L;
+      if (inc_ask) asks.pop();
+      if (inc_bid) bids.pop();
     };
 
     // highest bid was lower than lowest ask
-    if (nAsks == 0) {
+    if (asks.index == 0) {
       return (0, 0, 0, 0.0);
     };
-    // Note: nAsks > 0 implies nBids > 0
+    // Note: asks.index > 0 implies bids.index > 0
 
     (
-      nAsks,
-      nBids,
-      Nat.min(asksVolume, bidsVolume),
-      switch (lastAskToFulfil.0 == 0.0, lastBidToFulfil.0 == inf) {
-        // market sell against market buy => no execution
-        case (true, true) return (0, 0, 0, 0.0);
-        case (true, _) lastBidToFulfil.0; // market sell against highest bid => use bid price
-        case (_, true) lastAskToFulfil.0; // market buy against lowest ask => use ask price
-        case (_) (lastAskToFulfil.0 + lastBidToFulfil.0) / 2; // limit sell against limit buy => use middle price
+      asks.index,
+      bids.index,
+      Nat.min(asks.volume, bids.volume),
+      switch (asks.price == 0.0, bids.price == inf) {
+        case (true, true) return (0, 0, 0, 0.0); // market sell against market buy => no execution
+        case (true, _) bids.price; // market sell against highest bid => use bid price
+        case (_, true) asks.price; // market buy against lowest ask => use ask price
+        case (_) (asks.price + bids.price) / 2; // limit sell against limit buy => use middle price
       },
     );
   };
