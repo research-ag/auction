@@ -110,6 +110,72 @@ In the above example we see a single market sell order (ask)
 which is fully matched by multiple buy orders.
 The price is the highest price needed to fully match the sell order.
 
+```motoko
+import Principal "mo:base/Principal";
+import Iter "mo:base/Iter";
+
+import { matchOrders } "mo:auction";
+
+let asks = Iter.fromArray<(Float, Nat)>([
+  (50.0, 10_000),
+  (60.0, 10_000),
+  (70.0, 10_000),
+]);
+let bids = Iter.fromArray<(Float, Nat)>([
+  (40.0, 10_000),
+  (30.0, 10_000),
+  (20.0, 10_000),
+]);
+
+let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
+
+assert nAsks == 0;
+assert nBids == 0;
+assert volume == 0;
+assert price == 0.0;
+
+(nAsks, nBids, volume, price);
+```
+
+[Executable version of above example](https://embed.motoko.org/motoko/g/2sbs58q3Yzozi8mZhQd9pHULTuZRCiNFyQjxHoN1SeUSTw1fPt6ergWVQ6uNvBPwn1ChCQ74JZTNQUrFNYgRMF3nojt6s47PyBrLiu7pJfGxpnNizBUpECPT22Vg4WBJTJ69X63HAqB9ZsDQwqeMzGw4WxNL84E5BAd7Ff95BNrnt43fYUJtaXgr1DxNWdRe8g6GQG8RBfmC3MeopEe8JSnkzkY5H3Va1DnAK8mwZDXE9tgZadMKxYoTuxzqBHsjhFGRttRX6562Mu4mjUrtwGMNw1C7c1n1AWzPZVxGWzdid5yBWBZwXbSqPmbCzQ6JZ9gUkMo1ikhu85N2wmQAUmX99yYhkVJ3i?lines=26)
+
+In the above example we see three asks and bids that could not be matched to each other,
+the price of the highest bid is lower than a price of the lowest ask.
+
+```motoko
+import Principal "mo:base/Principal";
+import Iter "mo:base/Iter";
+
+import { matchOrders } "mo:auction";
+
+let asks = Iter.fromArray<(Float, Nat)>([
+  (50.0, 5_000),
+  (60.0, 3_000),
+  (70.0, 10_000),
+]);
+let bids = Iter.fromArray<(Float, Nat)>([
+  (70.0, 10_000),
+  (60.0, 2_000),
+]);
+
+let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
+
+assert nAsks == 3;
+assert nBids == 1;
+assert volume == 10_000;
+assert price == 70.0;
+
+(nAsks, nBids, volume, price);
+```
+
+[Executable version of above example](https://embed.motoko.org/motoko/g/76t8dMdMVa5Gwu3YfCTC8kpEau4CL2BMoqazHfRYVzoGx6KoJkBcbYfD6sSKKRQNKPine5pUELEUYR47wFTwEaL755oo9uLesfA1K4psMKGjuHcbNw1JqWPuHzYwU3NspoHKT5TutdpqzK4nEHNGKXnRodwrGa7tDCundLuhc6CAweXYFPvXHe96r2waZ4DsaeunhfqoTdnuKjWnZmqYN533H4xdM41e2auWXmBNhthE1VWLru5o4JLLg6L4ovhjAqwH3HUN2qEwht4NmihdswGhmBypPqxE8sbyzvZsEakj3ZpwAy5adVXsV8yP7RCaZuT9yKYSKp2GPfQr8QUDx9XXMxH5Y7aERUXikh1ondHEd?lines=25)
+
+In the above example we see how partial fulfillment works. Maximum deal volume in this case is 10_000, limited by first bid,
+because price 60 from second bid would allow only 8_000 volume to be sold according to asks. So only first bid and two 
+first asks are going to be fully fulfilled + 3rd ask will be fulfilled partially: 2k volume out of total 10k. Note that 
+the price of last ask was used in the deal price calculation, regardless of how much volume was fulfilled from it
+
+
 ### Build & test
 
 Run:
