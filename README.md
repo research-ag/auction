@@ -65,7 +65,7 @@ let bids = [
 matchOrders(asks.vals(), bids.vals());
 ```
 
-Edit and run this template on: [embed.motoko.org](https://embed.motoko.org/motoko/g/2MBKh9JCeUqnENSXLGqx2rwtLaV7KjYLhWHAzfesGtrEqgAUJmxzqzcSjMqARHkHTJd2yumtwBRXkUbE8A8RyCqH6moxmsW7HhZwRfDaTDRoon6Hfk9f4Pr1WjDE72EFimdvqpfySBiNYmfzW2G8phzbpsDZkct3XK7GMesCFfux5qi2nXAFuncdk4u19aEYkTka2JQdQWGc3FkA9HxKWxfv5TSrmmVU5KvNGQK19dpGj?lines=19)
+Edit and run this template on: [embed.motoko.org](https://embed.motoko.org/motoko/g/fvxgeoP2EkXL581f23Ds3wcrtNUzUg7Jh9M7r3pJLwbSFdwsXzCQN9i6V8dTZpTXyGKgsJADob8VyvudkE9cXRv9LYH7p4wSfASGqYZRdoxfRjbjRQy1pDw5CLXi7v1kesaLq6KJ5y8uMAxV9EfHAMP3tCBVbG2NzieizqdyLA57fxBp5RsSdqxaa2BGXtQx6avDH9mMrngTsLrUAw3tYczrKxhgNnWbx7NAAZ9a3YwqSUUXLmU?lines=19)
  
 
 We will analyze a few concrete examples.
@@ -84,7 +84,7 @@ let bids = [
   (50.0, 10_000),
 ];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
+let (nAsks, nBids, volume, price) = matchOrders(asks.vals(), bids.vals());
 // => (2, 2, 20_000, 60.0)
 ```
 
@@ -107,7 +107,7 @@ let bids = [
   (40.0, 2_000),
 ];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
+let (nAsks, nBids, volume, price) = matchOrders(asks.vals(), bids.vals());
 // => (1, 5, 10_000, 60.0)
 ```
 
@@ -129,7 +129,7 @@ let bids = [
   (20.0, 10_000),
 ];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
+let (nAsks, nBids, volume, price) = matchOrders(asks.vals(), bids.vals());
 // => (0, 0, 0, 0.0)
 ```
 
@@ -150,7 +150,7 @@ let bids = [
   (60.0, 2_000),
 ];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
+let (nAsks, nBids, volume, price) = matchOrders(asks.vals(), bids.vals());
 // => (3, 1, 10_000, 70.0)
 ```
 
