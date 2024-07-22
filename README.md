@@ -42,139 +42,123 @@ import Auction "mo:auction";
 
 ### Examples
 
+To play around with the matching algorithm you can use the following template and change the bids and asks:
+
 ```motoko
+//@package auction research-ag/auction/tree/main/src
 import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 
 import { matchOrders } "mo:auction";
 
-let asks = Iter.fromArray<(Float, Nat)>([
+let asks = [
   (50.0, 10_000),
   (60.0, 10_000),
   (70.0, 10_000),
-]);
-let bids = Iter.fromArray<(Float, Nat)>([
+];
+let bids = [
   (70.0, 10_000),
   (60.0, 10_000),
   (50.0, 10_000),
-]);
+];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-
-assert nAsks == 2;
-assert nBids == 2;
-assert volume == 20_000;
-assert price == 60.0;
-
-(nAsks, nBids, volume, price);
+matchOrders(asks.vals(), bids.vals());
 ```
 
-[Executable version of above example](https://embed.motoko.org/motoko/g/dUik8CbSbJXFuwUGR8DsHmA5ruvR25cqu8cV3Y47Yufq4PqdNJwv2Y4YrV4RfaQzoEG4usqbGLuWW2e5zbc8NB721o3sRKkkmeLbpraJQm3k1Hvwfcq3wWZY3B2crSwYtE4VePuUJvzQv9Fg1yXRMiuk3DxUh65hn1RXCL71GfecFi8sjL22shfbx6yqJSw5WUs1qr9CRMeNJanMmoobuwdgAsDAY3KNxXjKyPHWNnhpiLt356zCTyqm5uhBrE1vAsgQBHAEPHXv5ujz9NJkeCvtUeySxxKJBfzKtfV5yvJGgSTBbk7hVnG3JFk4wVatAfZTmVKD12W1RVZCnMWHj5NkFVZ1n9c33d6?lines=26)
+Edit and run this template on: [embed.motoko.org](https://embed.motoko.org/motoko/g/2MBKh9JCeUqnENSXLGqx2rwtLaV7KjYLhWHAzfesGtrEqgAUJmxzqzcSjMqARHkHTJd2yumtwBRXkUbE8A8RyCqH6moxmsW7HhZwRfDaTDRoon6Hfk9f4Pr1WjDE72EFimdvqpfySBiNYmfzW2G8phzbpsDZkct3XK7GMesCFfux5qi2nXAFuncdk4u19aEYkTka2JQdQWGc3FkA9HxKWxfv5TSrmmVU5KvNGQK19dpGj?lines=19)
+ 
 
-In the above example we see three asks and bids that could individually be matched to each other at three different prices for a total volume of 30,000.
+We will analyze a few concrete examples.
+
+#### Example 1
+
+```motoko
+let asks = [
+  (50.0, 10_000),
+  (60.0, 10_000),
+  (70.0, 10_000),
+];
+let bids = [
+  (70.0, 10_000),
+  (60.0, 10_000),
+  (50.0, 10_000),
+];
+
+let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
+// => (2, 2, 20_000, 60.0)
+```
+
+We see three asks and bids that could individually be matched to each other at three different prices for a total volume of 30,000.
 But at a single price the highest volume possible is 20,000 and it is reached at the price of 60.
 
+#### Example 2
+
 ```motoko
-import Principal "mo:base/Principal";
-import Iter "mo:base/Iter";
-
-import { matchOrders } "mo:auction";
-
-let asks = Iter.fromArray<(Float, Nat)>([
-  (0.0, 10000),
-]);
-let bids = Iter.fromArray<(Float, Nat)>([
-  (100.0, 2000),
-  (90.0, 2000),
-  (80.0, 2000),
-  (70.0, 2000),
-  (60.0, 2000),
-  // do not filfil: out of volume
-  (50.0, 2000),
-  (40.0, 2000),
-]);
+let asks = [
+  (0.0, 10_000),
+];
+let bids = [
+  (100.0, 2_000),
+  (90.0, 2_000),
+  (80.0, 2_000),
+  (70.0, 2_000),
+  (60.0, 2_000), // volume of 10_000 reached here
+  (50.0, 2_000),
+  (40.0, 2_000),
+];
 
 let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-
-assert nAsks == 1;
-assert nBids == 5;
-assert volume == 10_000;
-assert price == 60.0;
-
-(nAsks, nBids, volume, price);
+// => (1, 5, 10_000, 60.0)
 ```
 
-[Executable version of above example](https://embed.motoko.org/motoko/g/2Dugb2J1Nhm62uibeFHhf7gxxVFq3nHa9A9EBdWppt9gdGCKEjzGRD2wbD18gYjEbubzcwVcTHH6zPnuuYj2g2MBT845gVeEZs3ZSvczGcfHKJTALNFJ888TWTrKgq532W1AZW24WC1fMfb3fcD9sXLbyKyFsSzH9HVxHj3D193t2dZJsDxuKQ745Yzr26Q82rPVWWLMpWKvGWQZ5HJdLv9xQ3ee94kcryXppTxbrjNyT3pMyTqduK7wHwBT3iETNTtf59WbQm1NsP6Lbz8psMefKX3uvUB2iFkxnj9tKKXc2nqLvT4FdN3y77Vxs6FNEv6G41TLL31iLwjFcaBmgTxZB2xLoBbHdUG9zSYxsyeLEAV8tSXT4ppC2hza4AJD4NnKMW1HVKQhtrDnEeekK?lines=29)
-
-In the above example we see a single market sell order (ask)
-which is fully matched by multiple buy orders.
+Here, a single market sell order (ask)
+is fully matched by multiple buy orders (bids).
 The price is the highest price needed to fully match the sell order.
 
+#### Example 3
+
 ```motoko
-import Principal "mo:base/Principal";
-import Iter "mo:base/Iter";
-
-import { matchOrders } "mo:auction";
-
-let asks = Iter.fromArray<(Float, Nat)>([
+let asks = [
   (50.0, 10_000),
   (60.0, 10_000),
   (70.0, 10_000),
-]);
-let bids = Iter.fromArray<(Float, Nat)>([
+];
+let bids = [
   (40.0, 10_000),
   (30.0, 10_000),
   (20.0, 10_000),
-]);
+];
 
 let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-
-assert nAsks == 0;
-assert nBids == 0;
-assert volume == 0;
-assert price == 0.0;
-
-(nAsks, nBids, volume, price);
+// => (0, 0, 0, 0.0)
 ```
 
-[Executable version of above example](https://embed.motoko.org/motoko/g/2sbs58q3Yzozi8mZhQd9pHULTuZRCiNFyQjxHoN1SeUSTw1fPt6ergWVQ6uNvBPwn1ChCQ74JZTNQUrFNYgRMF3nojt6s47PyBrLiu7pJfGxpnNizBUpECPT22Vg4WBJTJ69X63HAqB9ZsDQwqeMzGw4WxNL84E5BAd7Ff95BNrnt43fYUJtaXgr1DxNWdRe8g6GQG8RBfmC3MeopEe8JSnkzkY5H3Va1DnAK8mwZDXE9tgZadMKxYoTuxzqBHsjhFGRttRX6562Mu4mjUrtwGMNw1C7c1n1AWzPZVxGWzdid5yBWBZwXbSqPmbCzQ6JZ9gUkMo1ikhu85N2wmQAUmX99yYhkVJ3i?lines=26)
+Here, 
+the price of the highest bid is lower than a price of the lowest ask,
+hence no volume can be exchanged.
 
-In the above example we see three asks and bids that could not be matched to each other,
-the price of the highest bid is lower than a price of the lowest ask.
+#### Example 4
 
 ```motoko
-import Principal "mo:base/Principal";
-import Iter "mo:base/Iter";
-
-import { matchOrders } "mo:auction";
-
-let asks = Iter.fromArray<(Float, Nat)>([
+let asks = [
   (50.0, 5_000),
   (60.0, 3_000),
   (70.0, 10_000),
-]);
-let bids = Iter.fromArray<(Float, Nat)>([
+];
+let bids = [
   (70.0, 10_000),
   (60.0, 2_000),
-]);
+];
 
 let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-
-assert nAsks == 3;
-assert nBids == 1;
-assert volume == 10_000;
-assert price == 70.0;
-
-(nAsks, nBids, volume, price);
+// => (3, 1, 10_000, 70.0)
 ```
 
-[Executable version of above example](https://embed.motoko.org/motoko/g/76t8dMdMVa5Gwu3YfCTC8kpEau4CL2BMoqazHfRYVzoGx6KoJkBcbYfD6sSKKRQNKPine5pUELEUYR47wFTwEaL755oo9uLesfA1K4psMKGjuHcbNw1JqWPuHzYwU3NspoHKT5TutdpqzK4nEHNGKXnRodwrGa7tDCundLuhc6CAweXYFPvXHe96r2waZ4DsaeunhfqoTdnuKjWnZmqYN533H4xdM41e2auWXmBNhthE1VWLru5o4JLLg6L4ovhjAqwH3HUN2qEwht4NmihdswGhmBypPqxE8sbyzvZsEakj3ZpwAy5adVXsV8yP7RCaZuT9yKYSKp2GPfQr8QUDx9XXMxH5Y7aERUXikh1ondHEd?lines=25)
-
-In the above example we see how partial fulfillment works. Maximum deal volume in this case is 10_000, limited by first bid,
-because price 60 from second bid would allow only 8_000 volume to be sold according to asks. So only first bid and two 
-first asks are going to be fully fulfilled + 3rd ask will be fulfilled partially: 2k volume out of total 10k. Note that 
-the price of last ask was used in the deal price calculation, regardless of how much volume was fulfilled from it
-
+Here, we see the partial fulfilment an order.
+The maximum volume is 10,000 which is reached at the price of 70.0.
+The total ask volume at his price is 18,000 and the total bid volume only 10,000.
+Hence the first two ask order get filled and the third ask order get partially filled with 2,000 out of 10,000. 
+Note that the price of last ask is used in the price calculation, regardless of how much volume is fulfilled from it.
 
 ### Build & test
 
