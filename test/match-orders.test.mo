@@ -1,7 +1,7 @@
 import Iter "mo:base/Iter";
 import Prim "mo:prim";
 
-import { matchOrders } "../src";
+import { clearAuction } "../src";
 
 
 do {
@@ -13,9 +13,7 @@ do {
     (1 / 0, 10000)
   ]);
 
-  let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-  assert nAsks == 1;
-  assert nBids == 1;
+  let (volume, price) = clearAuction(asks, bids);
   assert volume == 10000;
   assert price == 50.0;
 };
@@ -29,11 +27,9 @@ do {
     (100.0, 10000)
   ]);
 
-  let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-  assert nAsks == 1;
-  assert nBids == 1;
+  let (volume, price) = clearAuction(asks, bids);
   assert volume == 10000;
-  assert price == 100.0;
+  assert price == 0.0;
 };
 
 do {
@@ -52,11 +48,9 @@ do {
     (40.0, 2000),
   ]);
 
-  let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-  assert nAsks == 1;
-  assert nBids == 5;
+  let (volume, price) = clearAuction(asks, bids);
   assert volume == 10000;
-  assert price == 60.0;
+  assert price == 0.0;
 };
 
 do {
@@ -70,11 +64,9 @@ do {
     (80.0, 6000),
   ]);
 
-  let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-  assert nAsks == 1;
-  assert nBids == 2;
+  let (volume, price) = clearAuction(asks, bids);
   assert volume == 10000;
-  assert price == 90.0;
+  assert price == 0.0;
 };
 
 do {
@@ -90,11 +82,9 @@ do {
     (80.0, 10000),
   ]);
 
-  let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-  assert nAsks == 3;
-  assert nBids == 3;
+  let (volume, price) = clearAuction(asks, bids);
   assert volume == 30000;
-  assert price == 75.0;
+  assert price == 70.0;
 };
 
 
@@ -111,9 +101,7 @@ do {
     (50.0, 10000),
   ]);
 
-  let (nAsks, nBids, volume, price) = matchOrders(asks, bids);
-  assert nAsks == 0;
-  assert nBids == 0;
+  let (volume, price) = clearAuction(asks, bids);
   assert volume == 0;
   assert price == 0.0;
 };

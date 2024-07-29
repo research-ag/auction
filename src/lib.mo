@@ -18,35 +18,26 @@ module {
 
   public type Order = (price : Float, volume : Nat);
 
-  class OrderSide(next_ : () -> ?Order) {
-    public var price : Float = 0;
-    public var volume : Nat = 0;
-    public var index : Nat = 0;
-    var next : Order = (0, 0);
-
-    public func peek() : Bool {
-      switch (next_()) {
-        case (?x) { next := x; true };
-        case (null) false;
+  class Orders(iter : Iter.Iter<Order>) {
+    var lastPrice : Float = 0;
+    public func advance(b : Bool) : ?(Float, Nat) {
+      if (b) {
+        let ?x = iter.next() else return null;
+        lastPrice := x.0;
+        return ?x;
+      } else {
+        return ?(lastPrice, 0);
       };
-    };
-
-    public func peekPrice() : Float = next.0;
-
-    public func pop() {
-      index += 1;
-      price := next.0;
-      volume += next.1;
     };
   };
 
   /// Matching algorithm for a volume maximising single-price auction
   ///
   /// Suppose we have a single trading pair with base currency X and quote currency Y.
-  /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price. 
+  /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price.
   /// The algorithm will then find the price point at which the maximum volume of orders can be executed.
   /// It returns that price and the volume that can be executed at that price.
-  /// 
+  ///
   /// In a volume maximising auction all participants get their trades executed in one event,
   /// at the same time and at the same price.
   /// Or, if their orders missed the execution price then they are not eecuted at all.
@@ -80,54 +71,39 @@ module {
   /// A market ask order is modeled by having an ask price of 0.
   /// A market bid order is modeled by having an ask price of +inf.
   ///
-  /// The price is determined by the lowest matched bid order and the highest matched ask order. 
+  /// The price is determined by the lowest matched bid order and the highest matched ask order.
   /// - If no orders were matched, i.e. the volume is 0, then the function returns (0, 0, 0, 0.0).
   /// - If on both sides only market orders are matched, i.e. no limit order on either side was matched, then no execution occurs. This is because it is impossible to determine a price from 0 and +inf.
   /// - If the lowest matched bid is a market order, then the execution price is equal to the price of the highest matched ask.
   /// - If the highest matched ask is a market order, then the execution price is equal to the price of the lowest matched bid.
   /// - Otherwise, the price is the middle between the highest matches ask and lowest matched bid.
-  public func matchOrders(
-    asks_ : Iter.Iter<Order>,
-    bids_ : Iter.Iter<Order>,
+  public func clearAuction(
+    asksIter : Iter.Iter<Order>,
+    bidsIter : Iter.Iter<Order>,
   ) : (
-    nAsks : Nat,
-    nBids : Nat,
     volume : Nat,
     price : Float,
   ) {
 
-    let inf : Float = 1 / 0; // +inf
+    let askSide = Orders(asksIter);
+    let bidSide = Orders(bidsIter);
 
-    let asks = OrderSide(asks_.next);
-    let bids = OrderSide(bids_.next);
+    var clearingPrice : Float = 0;
+    var bidVolume = 0; // cumulative volume on bid side
+    var askVolume = 0; // cumulative volume on ask side
 
     label L loop {
-      let inc_ask = asks.volume <= bids.volume;
-      let inc_bid = bids.volume <= asks.volume;
-      if (inc_ask and not asks.peek()) break L;
-      if (inc_bid and not bids.peek()) break L;
-      if (bids.peekPrice() < asks.peekPrice()) break L;
-      if (inc_ask) asks.pop();
-      if (inc_bid) bids.pop();
+      let bidVolSmaller = bidVolume <= askVolume;
+      let askVolSmaller = askVolume <= bidVolume;
+      let ?bid = bidSide.advance(bidVolSmaller) else break L;
+      let ?ask = askSide.advance(askVolSmaller) else break L;
+      if (bid.0 < ask.0) break L;
+      clearingPrice := ask.0;
+      bidVolume += bid.1;
+      askVolume += ask.1;
     };
 
-    // highest bid was lower than lowest ask
-    if (asks.index == 0) {
-      return (0, 0, 0, 0.0);
-    };
-    // Note: asks.index > 0 implies bids.index > 0
-
-    (
-      asks.index,
-      bids.index,
-      Nat.min(asks.volume, bids.volume),
-      switch (asks.price == 0.0, bids.price == inf) {
-        case (true, true) return (0, 0, 0, 0.0); // market sell against market buy => no execution
-        case (true, _) bids.price; // market sell against highest bid => use bid price
-        case (_, true) asks.price; // market buy against lowest ask => use ask price
-        case (_) (asks.price + bids.price) / 2; // limit sell against limit buy => use middle price
-      },
-    );
+    (Nat.min(askVolume, bidVolume), clearingPrice);
   };
 
 };
