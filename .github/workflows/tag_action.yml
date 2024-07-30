@@ -5,7 +5,7 @@ on:
     tags:
       - rc*
 env:
-  NOTION_DATABASE_ID: 8115730b62ba4131996a69ad1680a222
+  NOTION_DATABASE_ID: f3d69fd2d9a54eff8ed07fef4eb185ea 
   WEBHOOK_URL: https://hook.eu2.make.com/sg1xhhlvnp4314llgde92csqgjrpm42e
 
 jobs:
