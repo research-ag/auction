@@ -1,8 +1,7 @@
 /// A module which implements auction functionality
 ///
 /// Copyright: 2023-2024 MR Research AG
-/// Main author: Andy Gura
-/// Contributors: Timo Hanke
+/// Authors: Andy Gura (AndyGura), Timo Hanke (timohanke)
 
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
@@ -14,7 +13,7 @@ import Nat "mo:base/Nat";
 /// It finds the single price point at which the maximum volume of orders can be executed.
 ///
 /// The application code is responsible for:
-/// - Collecting orders from participants. It usually keeps order hidden from the public until clearing happens.
+/// - Collecting orders from participants. It usually keeps orders hidden from the public until clearing happens.
 /// - Sorting the orders by ascending price for ask orders and descending price for bid orders.
 /// - Executing the trades at the determined price. Usually all trades get executed at the same price.
 module {
@@ -32,6 +31,7 @@ module {
     public func stepAndRead(shouldStep : Bool) : ?Order {
       if (shouldStep) {
         let ?x = iter.next() else return null;
+        assert x.0 > 0 and x.0 < 1 / 0; 
         lastPrice := x.0;
         return ?x;
       } else {
@@ -67,21 +67,20 @@ module {
   /// We say these order were "matched".
   ///
   /// # Parameters:
-  /// - `asks: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
-  /// - `bids: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
+  /// - `asks: Iter.Iter<Order>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
+  /// - `bids: Iter.Iter<Order>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
   ///
   /// # Returns:
+  /// - `trap` if an order price <= 0 or infinity is encountered.
   /// - `volume: Nat`: The total matched volume at the determined price.
   /// - `price: Float`: The determined execution price that maximises volume.
   ///
   /// The price is determined by the lowest matched matched ask order.
+  /// If no order can be matched then volume and price are both returned as zero.
   public func clearAuction(
     asksIter : Iter.Iter<Order>,
     bidsIter : Iter.Iter<Order>,
-  ) : (
-    price : Float,
-    volume : Nat,
-  ) {
+  ) : (price : Float, volume : Nat) {
 
     let askSide = OrderBook(asksIter);
     let bidSide = OrderBook(bidsIter);
