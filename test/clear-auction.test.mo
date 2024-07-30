@@ -3,7 +3,6 @@ import Prim "mo:prim";
 
 import { clearAuction } "../src";
 
-
 do {
   Prim.debugPrint("should use ask price for market bid...");
   let asks = Iter.fromArray<(Float, Nat)>([
@@ -13,7 +12,7 @@ do {
     (1 / 0, 10000)
   ]);
 
-  let (volume, price) = clearAuction(asks, bids);
+  let (price, volume) = clearAuction(asks, bids);
   assert volume == 10000;
   assert price == 50.0;
 };
@@ -27,7 +26,7 @@ do {
     (100.0, 10000)
   ]);
 
-  let (volume, price) = clearAuction(asks, bids);
+  let (price, volume) = clearAuction(asks, bids);
   assert volume == 10000;
   assert price == 0.0;
 };
@@ -48,7 +47,7 @@ do {
     (40.0, 2000),
   ]);
 
-  let (volume, price) = clearAuction(asks, bids);
+  let (price, volume) = clearAuction(asks, bids);
   assert volume == 10000;
   assert price == 0.0;
 };
@@ -64,13 +63,13 @@ do {
     (80.0, 6000),
   ]);
 
-  let (volume, price) = clearAuction(asks, bids);
+  let (price, volume) = clearAuction(asks, bids);
   assert volume == 10000;
   assert price == 0.0;
 };
 
 do {
-  Prim.debugPrint("should fulfil many bids/asks, use average price...");
+  Prim.debugPrint("should fulfil many bids/asks, use ask price...");
   let asks = Iter.fromArray<(Float, Nat)>([
     (50.0, 10000),
     (60.0, 10000),
@@ -82,7 +81,7 @@ do {
     (80.0, 10000),
   ]);
 
-  let (volume, price) = clearAuction(asks, bids);
+  let (price, volume) = clearAuction(asks, bids);
   assert volume == 30000;
   assert price == 70.0;
 };
@@ -101,7 +100,7 @@ do {
     (50.0, 10000),
   ]);
 
-  let (volume, price) = clearAuction(asks, bids);
+  let (price, volume) = clearAuction(asks, bids);
   assert volume == 0;
   assert price == 0.0;
 };

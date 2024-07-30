@@ -7,21 +7,30 @@
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 
-/// Matching algorithm for a volume maximising single-price auction
+/// Clearing algorithm for a volume maximising uniform-price auction
 ///
-/// This is an auction in which participants place limit orders or market orders ahead of time
-/// and the order book is usually hidden from the public.
-/// When the auction happens then the matching algorithm from this package runs.
+/// This is an auction in which participants place limit orders or market orders ahead of time.
+/// When the auction happens then the clearing algorithm from this package runs.
 /// It finds the single price point at which the maximum volume of orders can be executed.
-/// Then all participants will get their trades executed in one event, at the same time and at the same price.
+///
+/// The application code is responsible for:
+/// - Collecting orders from participants. It usually keeps order hidden from the public until clearing happens.
+/// - Sorting the orders by ascending price for ask orders and descending price for bid orders.
+/// - Executing the trades at the determined price. Usually all trades get executed at the same price.
 module {
 
+  /// Orders are specified by a limit price measured in quote currency and a volume measured in base currency.
   public type Order = (price : Float, volume : Nat);
 
-  class Orders(iter : Iter.Iter<Order>) {
+  // A helper class to iterate over the order book. The function `stepAndRead`
+  // reads the next order from the iterator if `shouldStep` is true, otherwise
+  // it returns the last order. In case of the last order it overrides the
+  // volume with 0 to make it easier for the caller to accumulate volume without
+  // double-counting volume.
+  class OrderBook(iter : Iter.Iter<Order>) {
     var lastPrice : Float = 0;
-    public func advance(b : Bool) : ?(Float, Nat) {
-      if (b) {
+    public func stepAndRead(shouldStep : Bool) : ?Order {
+      if (shouldStep) {
         let ?x = iter.next() else return null;
         lastPrice := x.0;
         return ?x;
@@ -31,7 +40,7 @@ module {
     };
   };
 
-  /// Matching algorithm for a volume maximising single-price auction
+  /// Clearing algorithm for a volume maximising uniform-price auction
   ///
   /// Suppose we have a single trading pair with base currency X and quote currency Y.
   /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price.
@@ -40,7 +49,7 @@ module {
   ///
   /// In a volume maximising auction all participants get their trades executed in one event,
   /// at the same time and at the same price.
-  /// Or, if their orders missed the execution price then they are not eecuted at all.
+  /// Or, if their orders missed the execution price then they are not executed at all.
   ///
   /// A bid order and ask order is a pair of price (type Float) and volume (type Nat).
   /// The price is denominated in Y and the volume is denominated in X.
@@ -48,8 +57,8 @@ module {
   /// The volume is measured in the smallest unit of Y.
   ///
   /// Roughly speaking, the algorithm works as follows:
-  /// We walk along ascending price on the ask side and, for each price point, accumulates the volume of all ask orders up to that price.
-  /// Simultaneously, we walk along descending price on the bid side and, for each price point, accumulates the volume of all bid orders above that price.
+  /// We walk along ascending price on the ask side and, for each price point, accumulate the volume of all ask orders up to that price.
+  /// Simultaneously, we walk along descending price on the bid side and, for each price point, accumulate the volume of all bid orders above that price.
   /// The two walks are coordinated such that the side which has the lower accumulated volume walks takes the next step, until that side's volume overtakes the accumulated volume of the side.
   /// Then the other side takes the next step, etc.
   /// When the two walks meet in price then we have found the price point at which the maximum volume can be executed.
@@ -62,48 +71,37 @@ module {
   /// - `bids: Iter.Iter<(price : Float, volume : Nat)>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
   ///
   /// # Returns:
-  /// - `nAsks: Nat`: The number of ask orders, starting from the beginning of the input iterator, that were matched. The last one could be partially matched and all other ones were fully matched.
-  /// - `nBids: Nat`: The number of bid orders, starting from the beginning of the input iterator, that were matched. The last one could be partially matched and all other ones were fully matched.
   /// - `volume: Nat`: The total matched volume at the determined price.
   /// - `price: Float`: The determined execution price that maximises volume.
   ///
-  /// The function is primarily designed for limit orders but it can handle market orders as well.
-  /// A market ask order is modeled by having an ask price of 0.
-  /// A market bid order is modeled by having an ask price of +inf.
-  ///
-  /// The price is determined by the lowest matched bid order and the highest matched ask order.
-  /// - If no orders were matched, i.e. the volume is 0, then the function returns (0, 0, 0, 0.0).
-  /// - If on both sides only market orders are matched, i.e. no limit order on either side was matched, then no execution occurs. This is because it is impossible to determine a price from 0 and +inf.
-  /// - If the lowest matched bid is a market order, then the execution price is equal to the price of the highest matched ask.
-  /// - If the highest matched ask is a market order, then the execution price is equal to the price of the lowest matched bid.
-  /// - Otherwise, the price is the middle between the highest matches ask and lowest matched bid.
+  /// The price is determined by the lowest matched matched ask order.
   public func clearAuction(
     asksIter : Iter.Iter<Order>,
     bidsIter : Iter.Iter<Order>,
   ) : (
-    volume : Nat,
     price : Float,
+    volume : Nat,
   ) {
 
-    let askSide = Orders(asksIter);
-    let bidSide = Orders(bidsIter);
+    let askSide = OrderBook(asksIter);
+    let bidSide = OrderBook(bidsIter);
 
     var clearingPrice : Float = 0;
     var bidVolume = 0; // cumulative volume on bid side
     var askVolume = 0; // cumulative volume on ask side
 
     label L loop {
-      let bidVolSmaller = bidVolume <= askVolume;
-      let askVolSmaller = askVolume <= bidVolume;
-      let ?bid = bidSide.advance(bidVolSmaller) else break L;
-      let ?ask = askSide.advance(askVolSmaller) else break L;
+      let shouldStepBids = bidVolume <= askVolume;
+      let shouldStepAsks = askVolume <= bidVolume;
+      let ?bid = bidSide.stepAndRead(shouldStepBids) else break L;
+      let ?ask = askSide.stepAndRead(shouldStepAsks) else break L;
       if (bid.0 < ask.0) break L;
       clearingPrice := ask.0;
       bidVolume += bid.1;
       askVolume += ask.1;
     };
 
-    (Nat.min(askVolume, bidVolume), clearingPrice);
+    (clearingPrice, Nat.min(askVolume, bidVolume));
   };
 
 };
