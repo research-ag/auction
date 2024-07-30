@@ -8,7 +8,7 @@ import Nat "mo:base/Nat";
 
 /// Clearing algorithm for a volume maximising uniform-price auction
 ///
-/// This is an auction in which participants place limit orders or market orders ahead of time.
+/// This is an auction in which participants place limit orders ahead of time.
 /// When the auction happens then the clearing algorithm from this package runs.
 /// It finds the single price point at which the maximum volume of orders can be executed.
 ///

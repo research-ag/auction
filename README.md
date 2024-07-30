@@ -6,13 +6,13 @@
 ## Overview
 
 A module which implements auction functionality
-with a volume maximising single-price auction.
+through a volume maximising uniform-price auction.
 
-Auction participants place limit orders or market orders ahead of time
-and the order book is usually hidden from the public.
-When the auction happens then the matching algorithm from this package runs.
+Auction participants place limit orders during a collection period.
+When the auction happens then the clearing algorithm from this package runs.
 It finds the single price point at which the maximum volume of orders can be executed.
 Then all participants will get their trades executed in one event, at the same time and at the same price.
+During the collection period the order book is usually hidden from the public.
 
 ### Links
 
@@ -49,7 +49,7 @@ To play around with the matching algorithm you can use the following template an
 import Principal "mo:base/Principal";
 import Iter "mo:base/Iter";
 
-import { matchOrders } "mo:auction";
+import { clearAuction } "mo:auction";
 
 let asks = [
   (50.0, 10_000),
@@ -62,11 +62,10 @@ let bids = [
   (50.0, 10_000),
 ];
 
-matchOrders(asks.vals(), bids.vals());
+clearAuction(asks.vals(), bids.vals());
 ```
 
-Edit and run this template on: [embed.motoko.org](https://embed.motoko.org/motoko/g/E5Rc9eazvH6xbJsuujXCa4p8HYLvftbVPF8D7VBzYk4hy5aKUeWroPErVno3r1RTtcdtiLBQqcPtn8aLEWSSwUUnPEToMuuejwtr75X8VeE2mBQecEMa3y88aULKhjRj74ziT4SZKd1PeMcY2TuPdmAqvhK6CfrhtomddNZyNffEXFHmF53s38ctXCsXknbCcHeZ7wfPQZa3nCugqbGfz7BVkakxe9U6jxaGDHq1Zc5huKTJb9FbMw?lines=19)
- 
+Edit and run this template on: [embed.motoko.org](https://embed.motoko.org/motoko/g/3xqAn1QTGMqrD5wvpZFpDsNsBPffM956V3tho5ZX2hx6RQAU8YiVojYUGtTci8YNi6dFaqqK9yjWYZKq3CgCXxg8fBRpQ37apEmKwXBYHJ8SxxkVraiEYBV79opMUcG6UKhCHZojdyzKcW7kiHRtSKctw41J5QATxbDsUCFQowb52XoecLRss6kqKQV74icWtW6D9CLcoC5pRqvNpn7M4n7Fsb3rYoLBqzmLRMq8LZqDAfGyrWekh?lines=19)
 
 We will analyze a few concrete examples.
 
@@ -84,8 +83,8 @@ let bids = [
   (50.0, 10_000),
 ];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks.vals(), bids.vals());
-// => (2, 2, 20_000, 60.0)
+let (price, volume) = matchOrders(asks.vals(), bids.vals());
+// => (60.0, 20_000)
 ```
 
 We see three asks and bids that could individually be matched to each other at three different prices for a total volume of 30,000.
@@ -107,8 +106,8 @@ let bids = [
   (40.0, 2_000),
 ];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks.vals(), bids.vals());
-// => (1, 5, 10_000, 60.0)
+let (price, volume) = matchOrders(asks.vals(), bids.vals());
+// => (60.0, 10_000)
 ```
 
 Here, a single market sell order (ask)
@@ -129,8 +128,8 @@ let bids = [
   (20.0, 10_000),
 ];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks.vals(), bids.vals());
-// => (0, 0, 0, 0.0)
+let (price, volume) = matchOrders(asks.vals(), bids.vals());
+// => (0.0, 0)
 ```
 
 Here, 
@@ -150,8 +149,8 @@ let bids = [
   (60.0, 2_000),
 ];
 
-let (nAsks, nBids, volume, price) = matchOrders(asks.vals(), bids.vals());
-// => (3, 1, 10_000, 70.0)
+let (price, volume) = matchOrders(asks.vals(), bids.vals());
+// => (70.0, 10_000)
 ```
 
 Here, we see the partial fulfilment an order.
@@ -183,9 +182,7 @@ mops bench --replica pocket-ic
 MR Research AG, 2023-24
 ## Authors
 
-Main author: Andy Gura (AndyGura)
-
-Contributors: Timo Hanke (timohanke)
+Main authors: Andy Gura (AndyGura), Timo Hanke (timohanke)
 ## License
 
 Apache-2.0
