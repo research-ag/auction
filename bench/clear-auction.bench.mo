@@ -5,7 +5,7 @@ import Nat "mo:base/Nat";
 import Prim "mo:prim";
 import Text "mo:base/Text";
 
-import { matchOrders } "../src";
+import { clearAuction } "../src";
 
 module {
 
@@ -35,7 +35,7 @@ module {
     bench.rows(rows);
     bench.cols(cols);
 
-    let envs = Array.tabulate<(asks : Iter.Iter<(price : Float, volume : Nat)>, bids : Iter.Iter<(price : Float, volume : Nat)>, res : (nAsks : Nat, nBids : Nat, volume : Nat, price : Float))>(
+    let envs = Array.tabulate<(asks : Iter.Iter<(price : Float, volume : Nat)>, bids : Iter.Iter<(price : Float, volume : Nat)>, res : (price : Float, volume : Nat))>(
       rows.size() * cols.size(),
       func(i) {
         let row : Nat = i % rows.size();
@@ -67,8 +67,8 @@ module {
           Array.vals(asks),
           Array.vals(bids),
           switch (nAsks, nBids) {
-            case ((0, _) or (_, 0)) (0, 0, 0, 0.0);
-            case (_) (nAsks, nBids, dealVolume, criticalPrice);
+            case ((0, _) or (_, 0)) (0.0, 0);
+            case (_) (criticalPrice, dealVolume);
           },
         );
       },
@@ -80,13 +80,11 @@ module {
         let ?ri = Array.indexOf<Text>(row, rows, Text.equal) else Prim.trap("Cannot determine row: " # row);
         let (asks, bids, expectedResult) = envs[ci * rows.size() + ri];
 
-        let result = matchOrders(asks, bids);
+        let result = clearAuction(asks, bids);
 
         // make sure everything worked as expected
         assert result.0 == expectedResult.0;
         assert result.1 == expectedResult.1;
-        assert result.2 == expectedResult.2;
-        assert result.3 == expectedResult.3;
       }
     );
 
