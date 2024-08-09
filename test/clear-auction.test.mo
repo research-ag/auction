@@ -3,6 +3,8 @@ import Prim "mo:prim";
 
 import { clearAuction } "../src";
 
+type Order = (Float, Nat);
+
 do {
   Prim.debugPrint("should fulfil many bids, use min price...");
   let asks = Iter.fromArray<(Float, Nat)>([
@@ -75,4 +77,50 @@ do {
   let (price, volume) = clearAuction(asks, bids);
   assert volume == 0;
   assert price == 0.0;
+};
+
+do {
+ Prim.debugPrint("Example 1"); 
+ let orders : ([Order], [Order]) = (
+  [(10, 10), (20, 10), (30, 10)], // asks ascending
+  [(30, 10), (20, 10), (10, 10)], // bids descending
+ );
+ let expect = (20.0, 20);
+ assert clearAuction(orders.0.vals(), orders.1.vals()) == expect;
+};
+do {
+ Prim.debugPrint("Example 2"); 
+ let orders : ([Order], [Order]) = (
+  [(5, 10), (15, 10), (25, 10)], // asks ascending
+  [(30, 10), (20, 10), (10, 10)], // bids descending
+ );
+ let expect = (15.0, 20);
+ assert clearAuction(orders.0.vals(), orders.1.vals()) == expect;
+};
+do {
+ Prim.debugPrint("Example 3"); 
+ let orders : ([Order], [Order]) = (
+  [(5, 10), (15, 10), (25, 10)], // asks ascending
+  [(30, 15), (20, 10), (10, 10)], // bids descending
+ );
+ let expect = (15.0, 20);
+ assert clearAuction(orders.0.vals(), orders.1.vals()) == expect;
+};
+do {
+ Prim.debugPrint("Example 4"); 
+ let orders : ([Order], [Order]) = (
+  [(5, 10), (15, 10), (25, 10)], // asks ascending
+  [(30, 20), (20, 10), (10, 10)], // bids descending
+ );
+ let expect = (15.0, 20);
+ assert clearAuction(orders.0.vals(), orders.1.vals()) == expect;
+};
+do {
+ Prim.debugPrint("Example 5"); 
+ let orders : ([Order], [Order]) = (
+  [(5, 10), (15, 10), (25, 10)], // asks ascending
+  [(30, 25), (20, 10), (10, 10)], // bids descending
+ );
+ let expect = (25.0, 25);
+ assert clearAuction(orders.0.vals(), orders.1.vals()) == expect;
 };
