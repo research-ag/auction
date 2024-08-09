@@ -29,8 +29,8 @@ module {
   ///
   /// Suppose we have a single trading pair with base currency X and quote currency Y.
   /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price.
-  /// The algorithm will then find the price range at which the maximum volume of orders can be executed.
-  /// It returns that price range and the volume that can be executed at that price.
+  /// The algorithm will then find the price point at which the maximum volume of orders can be executed.
+  /// It returns that price point and the volume that can be executed at that price.
   ///
   /// In a volume maximising auction all participants get their trades executed in one event,
   /// at the same time and at the same price.
