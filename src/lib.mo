@@ -21,23 +21,8 @@ module {
   /// Orders are specified by a limit price measured in quote currency and a volume measured in base currency.
   public type Order = (price : Float, volume : Nat);
 
-  // A helper class to iterate over the order book. The function `stepAndRead`
-  // reads the next order from the iterator if `shouldStep` is true, otherwise
-  // it returns the last order. In case of the last order it overrides the
-  // volume with 0 to make it easier for the caller to accumulate volume without
-  // double-counting volume.
-  class OrderBook(iter : Iter.Iter<Order>) {
-    var lastPrice : Float = 0;
-    public func stepAndRead(shouldStep : Bool) : ?Order {
-      if (shouldStep) {
-        let ?x = iter.next() else return null;
-        assert x.0 > 0 and x.0 < 1 / 0;
-        lastPrice := x.0;
-        return ?x;
-      } else {
-        return ?(lastPrice, 0);
-      };
-    };
+  func assert_valid_price(x : Float) {
+    assert x > 0 and x != 1 / 0;
   };
 
   /// Clearing algorithm for a volume maximising uniform-price auction
@@ -77,44 +62,6 @@ module {
   ///
   /// The price is determined by the lowest matched ask order.
   /// If no order can be matched then volume and price are both returned as zero.
-  public func clearAuctionRange(
-    asksIter : Iter.Iter<Order>,
-    bidsIter : Iter.Iter<Order>,
-  ) : {
-    range : (Float, Float);
-    volume : Nat;
-  } {
-    let askSide = OrderBook(asksIter);
-    let bidSide = OrderBook(bidsIter);
-
-    var range = (0.0, 0.0);
-    var bidVolume = 0; // cumulative volume on bid side
-    var askVolume = 0; // cumulative volume on ask side
-
-    label L loop {
-      let shouldStepBids = bidVolume <= askVolume;
-      let shouldStepAsks = askVolume <= bidVolume;
-      let ?bid = bidSide.stepAndRead(shouldStepBids) else break L;
-      let ?ask = askSide.stepAndRead(shouldStepAsks) else break L;
-      if (bid.0 < ask.0) break L;
-      range := (ask.0, bid.0);
-      bidVolume += bid.1;
-      askVolume += ask.1;
-    };
-
-    {
-      range;
-      volume = Nat.min(askVolume, bidVolume);
-    };
-  };
-
-  func assert_valid_price(x : Float) {
-    assert x > 0 and x != 1 / 0;
-  };
-
-  /// Clearing algorithm for a volume maximising uniform-price auction
-  ///
-  /// Compared to `clearAuctionRange` this functions only returns the lower price end of the range.
   public func clearAuction(
     asks : Iter.Iter<Order>,
     bids : Iter.Iter<Order>,
@@ -139,4 +86,43 @@ module {
 
     (price, Nat.min(askVolume, bidVolume));
   };
+
+  /// Clearing algorithm for a volume maximising uniform-price auction
+  ///
+  /// Compared to `clearAuction` this functions returns the full range of maximum trade volume.
+  public func clearAuctionRange(
+    asks : Iter.Iter<Order>,
+    bids : Iter.Iter<Order>,
+  ) : {
+    range : (Float, Float);
+    volume : Nat;
+  } {
+    var bidVolume = 0; // cumulative volume
+    var askVolume = 0; // cumulative volume
+    var price = 0.0;
+    var price2 = 0.0;
+
+    label L loop {
+      let ?bid = bids.next() else break L;
+      assert_valid_price(bid.0);
+      if (bid.0 < price) break L;
+      let wasEqual = bidVolume == askVolume;
+      if (not wasEqual) price2 := bid.0;
+      bidVolume += bid.1;
+      while (askVolume < bidVolume) {
+        let ?ask = asks.next() else break L;
+        assert_valid_price(ask.0);
+        if (ask.0 > bid.0) break L;
+        if (wasEqual) price2 := bid.0;
+        price := ask.0;
+        askVolume += ask.1;
+      };
+    };
+
+    {
+      range = (price, price2);
+      volume = Nat.min(askVolume, bidVolume);
+    };
+  };
+
 };
