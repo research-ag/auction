@@ -77,8 +77,7 @@ module {
   ///
   /// The price is determined by the lowest matched ask order.
   /// The returned volume is 0 if and only if no order can be matched.
-  /// In this case the price is meaningless but is returned as 0.0.
-  ///
+  /// In this case the price is meaningless and the provided dummy price is returned.
   ///
   /// The algorithm accepts orders with volume 0. Such orders have no influence on the return values.
   public func clearAuction<X>(
