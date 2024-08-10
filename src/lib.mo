@@ -173,4 +173,44 @@ module {
     return { range; volume };
   };
 
+  public func clearAuctionRangeGeneric<X>(
+    asks : Iter.Iter<Order<X>>,
+    bids : Iter.Iter<Order<X>>,
+    less : (X, X) -> Bool,
+    dummyPrice : X,
+  ) : {
+    range : (X, X);
+    volume : Nat;
+  } {
+    let noVolumeRange = { range = (dummyPrice, dummyPrice); volume = 0 };
+    let ?first_ask = asks.next() else return noVolumeRange;
+    var price_ask = first_ask.0;
+    var price_bid : ?X = null;
+    var askVolume = first_ask.1; // (cumulative)
+    var bidVolume = 0; // (cumulative)
+
+    // invariant here: askVolume >= bidVolume
+    label L loop {
+      let ?bid = bids.next() else break L;
+      if (less(bid.0, price_ask)) break L;
+      let wasEqual = bidVolume == askVolume;
+      if (not wasEqual) price_bid := ?bid.0;
+      bidVolume += bid.1;
+      while (askVolume < bidVolume) {
+        let ?ask = asks.next() else break L;
+        if (less(bid.0, ask.0)) break L;
+        if (wasEqual) price_bid := ?bid.0;
+        price_ask := ask.0;
+        askVolume += ask.1;
+      };
+    };
+
+    let volume = Nat.min(askVolume, bidVolume);
+    if (volume == 0) return noVolumeRange;
+    let range = switch (price_bid) {
+      case (?x) (price_ask, x);
+      case (null) Debug.trap("should not happen");
+    };
+    return { range; volume };
+  };
 };

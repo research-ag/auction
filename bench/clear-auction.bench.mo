@@ -5,7 +5,7 @@ import Nat "mo:base/Nat";
 import Prim "mo:prim";
 import Text "mo:base/Text";
 
-import { clearAuction } "../src";
+import { clearAuctionFloat } "../src";
 
 module {
 
@@ -80,7 +80,7 @@ module {
         let ?ri = Array.indexOf<Text>(row, rows, Text.equal) else Prim.trap("Cannot determine row: " # row);
         let (asks, bids, expectedResult) = envs[ci * rows.size() + ri];
 
-        let result = clearAuction(asks, bids);
+        let result = clearAuctionFloat(asks, bids);
 
         // make sure everything worked as expected
         assert result.0 == expectedResult.0;
