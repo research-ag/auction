@@ -1,8 +1,10 @@
 import Prim "mo:prim";
 
-import { clearAuction; clearAuctionRange } "../src";
+import Clear "../src";
 
-type Order = (Float, Nat);
+type Order = Clear.Order<Float>;
+let clearAuction = Clear.clearAuctionFloat;
+let clearAuctionRange = Clear.clearAuctionRange;
 
 do {
   Prim.debugPrint("should fulfil many bids, use min price...");
