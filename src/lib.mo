@@ -135,45 +135,7 @@ module {
   /// Clearing algorithm for a volume maximising uniform-price auction
   ///
   /// Compared to `clearAuction` this functions returns the full range of maximum trade volume.
-  public func clearAuctionRange(
-    asks : Iter.Iter<Order<Float>>,
-    bids : Iter.Iter<Order<Float>>,
-  ) : {
-    range : (Float, Float);
-    volume : Nat;
-  } {
-    let ?first_ask = asks.next() else return noVolumeRange;
-    var price_ask = first_ask.0;
-    var price_bid : ?Float = null;
-    var askVolume = first_ask.1; // (cumulative)
-    var bidVolume = 0; // (cumulative)
-
-    // invariant here: askVolume >= bidVolume
-    label L loop {
-      let ?bid = bids.next() else break L;
-      if (bid.0 < price_ask) break L;
-      let wasEqual = bidVolume == askVolume;
-      if (not wasEqual) price_bid := ?bid.0;
-      bidVolume += bid.1;
-      while (askVolume < bidVolume) {
-        let ?ask = asks.next() else break L;
-        if (ask.0 > bid.0) break L;
-        if (wasEqual) price_bid := ?bid.0;
-        price_ask := ask.0;
-        askVolume += ask.1;
-      };
-    };
-
-    let volume = Nat.min(askVolume, bidVolume);
-    if (volume == 0) return noVolumeRange;
-    let range = switch (price_bid) {
-      case (?x) (price_ask, x);
-      case (null) Debug.trap("should not happen");
-    };
-    return { range; volume };
-  };
-
-  public func clearAuctionRangeGeneric<X>(
+  public func clearAuctionRange<X>(
     asks : Iter.Iter<Order<X>>,
     bids : Iter.Iter<Order<X>>,
     less : (X, X) -> Bool,
@@ -212,5 +174,35 @@ module {
       case (null) Debug.trap("should not happen");
     };
     return { range; volume };
+  };
+
+  public func clearAuctionRangeFloat(
+    asks : Iter.Iter<Order<Float>>,
+    bids : Iter.Iter<Order<Float>>,
+  ) : {
+    range : (Float, Float);
+    volume : Nat;
+  } {
+    clearAuctionRange<Float>(asks, bids, Float.less, 0.0);
+  };
+
+  public func clearAuctionRangeNat(
+    asks : Iter.Iter<Order<Nat>>,
+    bids : Iter.Iter<Order<Nat>>,
+  ) : {
+    range : (Nat, Nat);
+    volume : Nat;
+  } {
+    clearAuctionRange<Nat>(asks, bids, Nat.less, 0);
+  };
+
+  public func clearAuctionRangeInt(
+    asks : Iter.Iter<Order<Int>>,
+    bids : Iter.Iter<Order<Int>>,
+  ) : {
+    range : (Int, Int);
+    volume : Nat;
+  } {
+    clearAuctionRange<Int>(asks, bids, Int.less, 0);
   };
 };

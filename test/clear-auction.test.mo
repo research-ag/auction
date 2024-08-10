@@ -4,7 +4,7 @@ import Clear "../src";
 
 type Order = Clear.Order<Float>;
 let clearAuction = Clear.clearAuctionFloat;
-let clearAuctionRange = Clear.clearAuctionRange;
+let clearAuctionRange = Clear.clearAuctionRangeFloat;
 
 do {
   Prim.debugPrint("should fulfil many bids, use min price...");
