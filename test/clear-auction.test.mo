@@ -102,3 +102,36 @@ do {
   assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
   assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
 };
+
+do {
+  Prim.debugPrint("Negative prices");
+  let orders : ([Order], [Order]) = (
+    [(-30, 10), (-20, 10), (-10, 10)], // asks ascending
+    [(-10, 10), (-20, 10), (-30, 10)], // bids descending
+  );
+  let expect = (-20.0, -20.0, 20);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+};
+
+do {
+  Prim.debugPrint("Infinite prices");
+  let orders : ([Order], [Order]) = (
+    [(-1/0, 10), (-20, 10), (1/0, 10)], // asks ascending
+    [(1/0, 10), (-20, 10), (-1/0, 10)], // bids descending
+  );
+  let expect = (-20.0, -20.0, 20);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+};
+
+do {
+  Prim.debugPrint("Zero volume");
+  let orders : ([Order], [Order]) = (
+    [(10, 0), (15, 0), (15, 10), (20, 0), (20, 10)], // asks ascending
+    [(25, 0), (20, 10), (15, 20)], // bids descending
+  );
+  let expect = (15.0, 20.0, 10);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+};

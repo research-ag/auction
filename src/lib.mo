@@ -5,6 +5,7 @@
 
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
+import Debug "mo:base/Debug";
 
 /// Clearing algorithm for a volume maximising uniform-price auction
 ///
@@ -21,9 +22,8 @@ module {
   /// Orders are specified by a limit price measured in quote currency and a volume measured in base currency.
   public type Order = (price : Float, volume : Nat);
 
-  func assert_valid_price(x : Float) {
-    assert x > 0 and x != 1 / 0;
-  };
+  let noVolume = (0.0, 0);
+  let noVolumeRange = { range = (0.0, 0.0); volume = 0 }; 
 
   /// Clearing algorithm for a volume maximising uniform-price auction
   ///
@@ -56,36 +56,44 @@ module {
   /// - `bids: Iter.Iter<Order>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
   ///
   /// # Returns:
-  /// - `trap` if an order price <= 0 or infinity is encountered.
   /// - `volume: Nat`: The total matched volume at the determined price.
   /// - `price: Float`: The determined execution price that maximises volume.
   ///
   /// The price is determined by the lowest matched ask order.
-  /// If no order can be matched then volume and price are both returned as zero.
+  /// The returned volume is 0 if and only if no order can be matched.
+  /// In this case the price is meaningless but is returned as 0.0.
+  ///
+  /// The algorithm accepts all possible Float values as prices including 0, infinity and negative values.
+  /// This is possible because only the relative order of prices matters, not their actual arithmetic value.
+  ///
+  /// The algorithm accepts orders with volume 0. Such orders have no influence on the return values.
   public func clearAuction(
     asks : Iter.Iter<Order>,
     bids : Iter.Iter<Order>,
   ) : (price : Float, volume : Nat) {
-    var bidVolume = 0; // cumulative volume
-    var askVolume = 0; // cumulative volume
-    var price = 0.0;
+    let ?first_ask = asks.next() else return noVolume;
+    var price = first_ask.0;
+    var askVolume = first_ask.1; // (cumulative)
+    var bidVolume = 0; // (cumulative)
 
+    // invariant here: askVolume >= bidVolume
     label L loop {
       let ?bid = bids.next() else break L;
-      assert_valid_price(bid.0);
       if (bid.0 < price) break L;
       bidVolume += bid.1;
       while (askVolume < bidVolume) {
         let ?ask = asks.next() else break L;
-        assert_valid_price(ask.0);
         if (ask.0 > bid.0) break L;
         price := ask.0;
         askVolume += ask.1;
       };
     };
 
-    (price, Nat.min(askVolume, bidVolume));
+    let vol = Nat.min(askVolume, bidVolume);
+    if (vol == 0) price := 0.0;
+    return (price, vol);
   };
+
 
   /// Clearing algorithm for a volume maximising uniform-price auction
   ///
@@ -97,32 +105,35 @@ module {
     range : (Float, Float);
     volume : Nat;
   } {
-    var bidVolume = 0; // cumulative volume
-    var askVolume = 0; // cumulative volume
-    var price = 0.0;
-    var price2 = 0.0;
+    let ?first_ask = asks.next() else return noVolumeRange;
+    var price_ask = first_ask.0;
+    var price_bid : ?Float = null;
+    var askVolume = first_ask.1; // (cumulative)
+    var bidVolume = 0; // (cumulative)
 
+    // invariant here: askVolume >= bidVolume
     label L loop {
       let ?bid = bids.next() else break L;
-      assert_valid_price(bid.0);
-      if (bid.0 < price) break L;
+      if (bid.0 < price_ask) break L;
       let wasEqual = bidVolume == askVolume;
-      if (not wasEqual) price2 := bid.0;
+      if (not wasEqual) price_bid := ?bid.0;
       bidVolume += bid.1;
       while (askVolume < bidVolume) {
         let ?ask = asks.next() else break L;
-        assert_valid_price(ask.0);
         if (ask.0 > bid.0) break L;
-        if (wasEqual) price2 := bid.0;
-        price := ask.0;
+        if (wasEqual) price_bid := ?bid.0;
+        price_ask := ask.0;
         askVolume += ask.1;
       };
     };
 
-    {
-      range = (price, price2);
-      volume = Nat.min(askVolume, bidVolume);
+    let volume = Nat.min(askVolume, bidVolume);
+    if (volume == 0) return noVolumeRange;
+    let range = switch(price_bid) {
+      case (?x) (price_ask, x);
+      case (null) Debug.trap("should not happen");
     };
+    return { range; volume };
   };
 
 };
