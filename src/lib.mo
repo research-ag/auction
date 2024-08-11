@@ -1,6 +1,6 @@
 /// A module which implements auction functionality
 ///
-/// Copyright: 2023-2024 MR Research AG
+/// Copyright: 2024 MR Research AG
 /// Author: Timo Hanke (timohanke)
 /// Contributors: Andy Gura (AndyGura) 
 
@@ -97,9 +97,10 @@ module {
       let ?bid = bids.next() else break L;
       if (less(bid.0, price)) break L;
       bidVolume += bid.1;
-      while (askVolume < bidVolume) {
+      label W while (askVolume < bidVolume) {
         let ?ask = asks.next() else break L;
         if (less(bid.0, ask.0)) break L;
+        if (ask.1 == 0) continue W; // skip 0 volume asks
         price := ask.0;
         askVolume += ask.1;
       };
@@ -139,9 +140,10 @@ module {
       if (bid.1 == 0) continue L; // skip 0 volume bids
       bidVolume += bid.1;
       if (not askNeeded) bidPrice := ?bid.0; // if askNeeded then do this later below
-      while (askVolume < bidVolume) {
+      label W while (askVolume < bidVolume) {
         let ?ask = asks.next() else break L;
         if (less(bid.0, ask.0)) break L;
+        if (ask.1 == 0) continue W; // skip 0 volume asks
         if (askNeeded) bidPrice := ?bid.0;
         askPrice := ask.0;
         askVolume += ask.1;

@@ -19,7 +19,6 @@ func clearAuctionRange(
   Clear.clearAuctionRange<Float>(asks, bids, Float.less);
 };
 
-
 do {
   Prim.debugPrint("should fulfil many bids, use min price...");
   let orders : ([Order], [Order]) = (
@@ -171,12 +170,12 @@ do {
 };
 
 do {
-  Prim.debugPrint("Zero volume");
+  Prim.debugPrint("Zero volume ask could affect price");
   let orders : ([Order], [Order]) = (
-    [(10, 0), (15, 0), (15, 10), (20, 0), (20, 10)], // asks ascending
-    [(25, 0), (20, 10), (15, 20)], // bids descending
+    [(10, 5), (15, 0)], // asks ascending
+    [(20, 10)], // bids descending
   );
-  let expect = (15.0, 20.0, 10);
+  let expect = (10.0, 20.0, 5);
   assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
     range = (expect.0, expect.1);
     volume = expect.2;
@@ -185,7 +184,21 @@ do {
 };
 
 do {
-  Prim.debugPrint("Zero volume could affect range");
+  Prim.debugPrint("Zero volume ask could affect range");
+  let orders : ([Order], [Order]) = (
+    [(10, 10), (10, 0)], // asks ascending
+    [(30, 10), (25, 10)], // bids descending
+  );
+  let expect = (10.0, 30.0, 10);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
+};
+
+do {
+  Prim.debugPrint("Zero volume bid could affect range");
   let orders : ([Order], [Order]) = (
     [(10, 10)], // asks ascending
     [(30, 5), (25, 0)], // bids descending
