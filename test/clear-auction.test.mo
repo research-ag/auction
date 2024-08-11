@@ -1,10 +1,24 @@
+import Float "mo:base/Float";
+import Iter "mo:base/Iter";
 import Prim "mo:prim";
 
 import Clear "../src";
 
 type Order = Clear.Order<Float>;
-let clearAuction = Clear.clearAuctionFloat;
-let clearAuctionRange = Clear.clearAuctionRangeFloat;
+
+func clearAuction(
+  asks : Iter.Iter<Order>,
+  bids : Iter.Iter<Order>,
+) : ?Clear.priceResult<Float> {
+  Clear.clearAuction<Float>(asks, bids, Float.less);
+};
+func clearAuctionRange(
+  asks : Iter.Iter<Order>,
+  bids : Iter.Iter<Order>,
+) : ?Clear.rangeResult<Float> {
+  Clear.clearAuctionRange<Float>(asks, bids, Float.less);
+};
+
 
 do {
   Prim.debugPrint("should fulfil many bids, use min price...");
@@ -13,8 +27,11 @@ do {
     [(100, 20), (90, 20), (80, 20), (70, 20), (60, 20), (50, 20), (40, 20)] // bids descending
   );
   let expect = (20.0, 60.0, 100);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -24,8 +41,11 @@ do {
     [(100, 60), (90, 60), (80, 60)] // bids descending
   );
   let expect = (50.0, 90.0, 100);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -35,8 +55,11 @@ do {
     [(100, 100), (90, 100), (80, 100)] // bids descending
   );
   let expect = (70.0, 80.0, 300);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -45,9 +68,8 @@ do {
     [(80, 100), (90, 100), (100, 100)], // asks ascending
     [(70, 100), (60, 100), (50, 100)] // bids descending
   );
-  let expect = (0.0, 0.0, 0);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == null;
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == null;
 };
 
 do {
@@ -57,8 +79,11 @@ do {
     [(30, 10), (20, 10), (10, 10)], // bids descending
   );
   let expect = (20.0, 20.0, 20);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -68,8 +93,11 @@ do {
     [(30, 10), (20, 10), (10, 10)], // bids descending
   );
   let expect = (15.0, 20.0, 20);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -79,8 +107,11 @@ do {
     [(30, 15), (20, 10), (10, 10)], // bids descending
   );
   let expect = (15.0, 20.0, 20);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -90,8 +121,11 @@ do {
     [(30, 20), (20, 10), (10, 10)], // bids descending
   );
   let expect = (15.0, 30.0, 20);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -101,8 +135,11 @@ do {
     [(30, 25), (20, 10), (10, 10)], // bids descending
   );
   let expect = (25.0, 30.0, 25);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -112,19 +149,25 @@ do {
     [(-10, 10), (-20, 10), (-30, 10)], // bids descending
   );
   let expect = (-20.0, -20.0, 20);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
   Prim.debugPrint("Infinite prices");
   let orders : ([Order], [Order]) = (
-    [(-1/0, 10), (-20, 10), (1/0, 10)], // asks ascending
-    [(1/0, 10), (-20, 10), (-1/0, 10)], // bids descending
+    [(-1 / 0, 10), (-20, 10), (1 / 0, 10)], // asks ascending
+    [(1 / 0, 10), (-20, 10), (-1 / 0, 10)], // bids descending
   );
   let expect = (-20.0, -20.0, 20);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };
 
 do {
@@ -134,6 +177,23 @@ do {
     [(25, 0), (20, 10), (15, 20)], // bids descending
   );
   let expect = (15.0, 20.0, 10);
-  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == { range = (expect.0, expect.1); volume = expect.2};
-  assert clearAuction(orders.0.vals(), orders.1.vals()) == (expect.0, expect.2);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
+};
+
+do {
+  Prim.debugPrint("Zero volume could affect range");
+  let orders : ([Order], [Order]) = (
+    [(10, 10)], // asks ascending
+    [(30, 5), (25, 0)], // bids descending
+  );
+  let expect = (10.0, 30.0, 5);
+  assert clearAuctionRange(orders.0.vals(), orders.1.vals()) == ?{
+    range = (expect.0, expect.1);
+    volume = expect.2;
+  };
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.2);
 };

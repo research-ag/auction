@@ -1,11 +1,10 @@
 /// A module which implements auction functionality
 ///
 /// Copyright: 2023-2024 MR Research AG
-/// Authors: Andy Gura (AndyGura), Timo Hanke (timohanke)
+/// Author: Timo Hanke (timohanke)
+/// Contributors: Andy Gura (AndyGura) 
 
 import Debug "mo:base/Debug";
-import Float "mo:base/Float";
-import Int "mo:base/Int";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 
@@ -23,8 +22,11 @@ module {
 
   /// Orders are specified by a limit price measured in quote currency and a volume measured in base currency.
   public type Order<X> = (price : X, volume : Nat);
-
-  let noVolumeRange = { range = (0.0, 0.0); volume = 0 };
+  public type priceResult<X> = (price : X, volume : Nat);
+  public type rangeResult<X> = {
+    range : (X, X);
+    volume : Nat;
+  };
 
   /// Clearing algorithm for a volume maximising uniform-price auction
   ///
@@ -63,12 +65,12 @@ module {
   /// The algorithm accepts all possible Float values as prices including 0, infinity and negative values.
   /// This is possible because only the relative order of prices matters, not their actual arithmetic value.
   ///
-  /// The volume type is Nat. 
+  /// The volume type is Nat.
   ///
   /// # Parameters:
   /// - `asks: Iter.Iter<Order<X>>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
   /// - `bids: Iter.Iter<Order<X>>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
-  /// - `less: (X,X) -> Bool`: comparison function 
+  /// - `less: (X,X) -> Bool`: comparison function
   /// - `dummyPrice: X`: an arbitrary value of type X
   ///
   /// # Returns:
@@ -84,15 +86,13 @@ module {
     asks : Iter.Iter<Order<X>>,
     bids : Iter.Iter<Order<X>>,
     less : (X, X) -> Bool,
-    dummyPrice : X,
-  ) : (price : X, volume : Nat) {
-    let noVolume = (dummyPrice, 0);
-    let ?first_ask = asks.next() else return noVolume;
+  ) : ?(price : X, volume : Nat) {
+    let ?first_ask = asks.next() else return null;
     var price = first_ask.0;
     var askVolume = first_ask.1; // (cumulative)
     var bidVolume = 0; // (cumulative)
 
-    // invariant here: askVolume >= bidVolume
+    // loop invariant: askVolume >= bidVolume
     label L loop {
       let ?bid = bids.next() else break L;
       if (less(bid.0, price)) break L;
@@ -106,31 +106,9 @@ module {
     };
 
     let vol = Nat.min(askVolume, bidVolume);
-    if (vol == 0) return noVolume;
-    return (price, vol);
+    if (vol == 0) return null;
+    return ?(price, vol);
   };
-
-  public func clearAuctionFloat(
-    asks : Iter.Iter<Order<Float>>,
-    bids : Iter.Iter<Order<Float>>,
-  ) : (price : Float, volume : Nat) {
-    clearAuction<Float>(asks, bids, Float.less, 0.0);
-  };
-
-  public func clearAuctionNat(
-    asks : Iter.Iter<Order<Nat>>,
-    bids : Iter.Iter<Order<Nat>>,
-  ) : (price : Nat, volume : Nat) {
-    clearAuction<Nat>(asks, bids, Nat.less, 0);
-  };
-
-  public func clearAuctionInt(
-    asks : Iter.Iter<Order<Int>>,
-    bids : Iter.Iter<Order<Int>>,
-  ) : (price : Int, volume : Nat) {
-    clearAuction<Int>(asks, bids, Int.less, 0);
-  };
- 
 
   /// Clearing algorithm for a volume maximising uniform-price auction
   ///
@@ -139,70 +117,44 @@ module {
     asks : Iter.Iter<Order<X>>,
     bids : Iter.Iter<Order<X>>,
     less : (X, X) -> Bool,
-    dummyPrice : X,
-  ) : {
+  ) : ?{
     range : (X, X);
     volume : Nat;
   } {
-    let noVolumeRange = { range = (dummyPrice, dummyPrice); volume = 0 };
-    let ?first_ask = asks.next() else return noVolumeRange;
-    var price_ask = first_ask.0;
-    var price_bid : ?X = null;
+    let ?first_ask = asks.next() else return null;
+    var askPrice = first_ask.0;
+    var bidPrice : ?X = null;
     var askVolume = first_ask.1; // (cumulative)
     var bidVolume = 0; // (cumulative)
 
-    // invariant here: askVolume >= bidVolume
+    // loop invariant: askVolume >= bidVolume
     label L loop {
+      // first check whether the loop invariant holds with > or ==
+      // if > then the next bid will become part of the clearing
+      // if == then the next bid may become part of the clearing but needs another ask to match it
+      let askNeeded = askVolume == bidVolume;
+
       let ?bid = bids.next() else break L;
-      if (less(bid.0, price_ask)) break L;
-      let wasEqual = bidVolume == askVolume;
-      if (not wasEqual) price_bid := ?bid.0;
+      if (less(bid.0, askPrice)) break L;
+      if (bid.1 == 0) continue L; // skip 0 volume bids
       bidVolume += bid.1;
+      if (not askNeeded) bidPrice := ?bid.0; // if askNeeded then do this later below
       while (askVolume < bidVolume) {
         let ?ask = asks.next() else break L;
         if (less(bid.0, ask.0)) break L;
-        if (wasEqual) price_bid := ?bid.0;
-        price_ask := ask.0;
+        if (askNeeded) bidPrice := ?bid.0;
+        askPrice := ask.0;
         askVolume += ask.1;
       };
     };
 
     let volume = Nat.min(askVolume, bidVolume);
-    if (volume == 0) return noVolumeRange;
-    let range = switch (price_bid) {
-      case (?x) (price_ask, x);
+    if (volume == 0) return null;
+    let range = switch (bidPrice) {
+      case (?b) (askPrice, b);
       case (null) Debug.trap("should not happen");
     };
-    return { range; volume };
+    return ?{ range; volume };
   };
 
-  public func clearAuctionRangeFloat(
-    asks : Iter.Iter<Order<Float>>,
-    bids : Iter.Iter<Order<Float>>,
-  ) : {
-    range : (Float, Float);
-    volume : Nat;
-  } {
-    clearAuctionRange<Float>(asks, bids, Float.less, 0.0);
-  };
-
-  public func clearAuctionRangeNat(
-    asks : Iter.Iter<Order<Nat>>,
-    bids : Iter.Iter<Order<Nat>>,
-  ) : {
-    range : (Nat, Nat);
-    volume : Nat;
-  } {
-    clearAuctionRange<Nat>(asks, bids, Nat.less, 0);
-  };
-
-  public func clearAuctionRangeInt(
-    asks : Iter.Iter<Order<Int>>,
-    bids : Iter.Iter<Order<Int>>,
-  ) : {
-    range : (Int, Int);
-    volume : Nat;
-  } {
-    clearAuctionRange<Int>(asks, bids, Int.less, 0);
-  };
 };
