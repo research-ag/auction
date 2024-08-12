@@ -1,5 +1,14 @@
 # Auction changelog
 
+## 2.0.0
+
+* Improved algorithm 30% faster
+* Two functions, one for price only, one for price range
+* Generic price type as type parameter (e.g. Nat, Int, Float)
+* No rejection of negative prices or infinity
+* Handle volume 0 orders
+* Bumped moc dependencies to 0.12.1
+
 ## 1.0.0
 
 * Remove market orders
