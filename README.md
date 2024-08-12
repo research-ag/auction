@@ -45,27 +45,25 @@ import Auction "mo:auction";
 To play around with the matching algorithm you can use the following template and change the bids and asks:
 
 ```motoko
-//@package auction research-ag/auction/tree/main/src
-import Principal "mo:base/Principal";
-import Iter "mo:base/Iter";
-
-import { clearAuction } "mo:auction";
+//@package auction research-ag/auction/main/src
+import Float "mo:base/Float";
+import Auction "mo:auction";
 
 let asks = [
-  (50.0, 10_000),
-  (60.0, 10_000),
-  (70.0, 10_000),
+  (50.0, 100),
+  (60.0, 100),
+  (70.0, 100),
 ];
 let bids = [
-  (70.0, 10_000),
-  (60.0, 10_000),
-  (50.0, 10_000),
+  (70.0, 100),
+  (60.0, 100),
+  (50.0, 100),
 ];
 
-clearAuction(asks.vals(), bids.vals());
+Auction.clear(asks.vals(), bids.vals(), Float.less);
 ```
 
-Edit and run this template on: [embed.motoko.org](https://embed.motoko.org/motoko/g/3xqAn1QTGMqrD5wvpZFpDsNsBPffM956V3tho5ZX2hx6RQAU8YiVojYUGtTci8YNi6dFaqqK9yjWYZKq3CgCXxg8fBRpQ37apEmKwXBYHJ8SxxkVraiEYBV79opMUcG6UKhCHZojdyzKcW7kiHRtSKctw41J5QATxbDsUCFQowb52XoecLRss6kqKQV74icWtW6D9CLcoC5pRqvNpn7M4n7Fsb3rYoLBqzmLRMq8LZqDAfGyrWekh?lines=19)
+Edit and run this template on: [embed.motoko.org](https://embed.motoko.org/motoko/g/QzWqprifHe2NQ7xGqbqnBoy8hqNZsnc3b2jLuzivSPwtbwac47MB7fAWU3LUs3zR3JNA4V2EXBACwEErn1w2dUb9KruaTj5KU52QnDA3PoL3bJMe4UuRdn8VyKpeVyfJizz4TY355hkTTKJZ7xkoYDuNTnVC4w7UWgJ2mzQCL4dXGGKiG3J1J4WxE7CvUx3ja7pXnaHo2Dhyg6Pjg1vhWLg7x4hSgDjd?lines=17)
 
 We will analyze a few concrete examples.
 
@@ -73,41 +71,41 @@ We will analyze a few concrete examples.
 
 ```motoko
 let asks = [
-  (50.0, 10_000),
-  (60.0, 10_000),
-  (70.0, 10_000),
+  (50.0, 100),
+  (60.0, 100),
+  (70.0, 100),
 ];
 let bids = [
-  (70.0, 10_000),
-  (60.0, 10_000),
-  (50.0, 10_000),
+  (70.0, 100),
+  (60.0, 100),
+  (50.0, 100),
 ];
 
-let (price, volume) = matchOrders(asks.vals(), bids.vals());
-// => (60.0, 20_000)
+Auction.clear(asks.vals(), bids.vals(), Float.less);
+// => ?(60.0, 200)
 ```
 
-We see three asks and bids that could individually be matched to each other at three different prices for a total volume of 30,000.
-But at a single price the highest volume possible is 20,000 and it is reached at the price of 60.
+We see three asks and bids that could individually be matched to each other at three different prices for a total volume of 300.
+But at a single price the highest volume possible is 200 and it is reached at the price of 60.
 
 #### Example 2
 
 ```motoko
 let asks = [
-  (0.0, 10_000),
+  (0.0, 100),
 ];
 let bids = [
-  (100.0, 2_000),
-  (90.0, 2_000),
-  (80.0, 2_000),
-  (70.0, 2_000),
-  (60.0, 2_000), // volume of 10_000 reached here
-  (50.0, 2_000),
-  (40.0, 2_000),
+  (100.0, 20),
+  (90.0, 20),
+  (80.0, 20),
+  (70.0, 20),
+  (60.0, 20), // volume of 100 reached here
+  (50.0, 20),
+  (40.0, 20),
 ];
+Auction.clear(asks.vals(), bids.vals(), Float.less);
 
-let (price, volume) = matchOrders(asks.vals(), bids.vals());
-// => (60.0, 10_000)
+// => ?(60.0, 100)
 ```
 
 Here, a single market sell order (ask)
@@ -118,18 +116,18 @@ The price is the highest price needed to fully match the sell order.
 
 ```motoko
 let asks = [
-  (50.0, 10_000),
-  (60.0, 10_000),
-  (70.0, 10_000),
+  (50.0, 100),
+  (60.0, 100),
+  (70.0, 100),
 ];
 let bids = [
-  (40.0, 10_000),
-  (30.0, 10_000),
-  (20.0, 10_000),
+  (40.0, 100),
+  (30.0, 100),
+  (20.0, 100),
 ];
+Auction.clear(asks.vals(), bids.vals(), Float.less);
 
-let (price, volume) = matchOrders(asks.vals(), bids.vals());
-// => (0.0, 0)
+// => null
 ```
 
 Here, 
@@ -140,23 +138,23 @@ hence no volume can be exchanged.
 
 ```motoko
 let asks = [
-  (50.0, 5_000),
-  (60.0, 3_000),
-  (70.0, 10_000),
+  (50.0, 50),
+  (60.0, 30),
+  (70.0, 100),
 ];
 let bids = [
-  (70.0, 10_000),
-  (60.0, 2_000),
+  (70.0, 100),
+  (60.0, 20),
 ];
 
-let (price, volume) = matchOrders(asks.vals(), bids.vals());
-// => (70.0, 10_000)
+Auction.clear(asks.vals(), bids.vals(), Float.less);
+// => ?(70.0, 100)
 ```
 
 Here, we see the partial fulfilment an order.
-The maximum volume is 10,000 which is reached at the price of 70.0.
-The total ask volume at his price is 18,000 and the total bid volume only 10,000.
-Hence the first two ask order get filled and the third ask order get partially filled with 2,000 out of 10,000. 
+The maximum volume is 100 which is reached at the price of 70.0.
+The total ask volume at his price is 180 and the total bid volume only 100.
+Hence the first two ask order get filled and the third ask order get partially filled with 20 out of 100. 
 Note that the price of last ask is used in the price calculation, regardless of how much volume is fulfilled from it.
 
 ### Build & test
@@ -179,10 +177,11 @@ mops bench --replica pocket-ic
 
 ## Copyright
 
-MR Research AG, 2023-24
+MR Research AG, 2024
 ## Authors
 
-Main authors: Andy Gura (AndyGura), Timo Hanke (timohanke)
+Main authors: Timo Hanke (timohanke)  
+Contributors: Andy Gura (AndyGura) 
 ## License
 
 Apache-2.0

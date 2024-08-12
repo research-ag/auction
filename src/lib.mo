@@ -1,8 +1,10 @@
 /// A module which implements auction functionality
 ///
-/// Copyright: 2023-2024 MR Research AG
-/// Authors: Andy Gura (AndyGura), Timo Hanke (timohanke)
+/// Copyright: 2024 MR Research AG
+/// Author: Timo Hanke (timohanke)
+/// Contributors: Andy Gura (AndyGura)
 
+import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 
@@ -19,25 +21,17 @@ import Nat "mo:base/Nat";
 module {
 
   /// Orders are specified by a limit price measured in quote currency and a volume measured in base currency.
-  public type Order = (price : Float, volume : Nat);
+  /// The price type is generic and is required to have a comparison function `less`.
+  /// Typically prices are Nat, Int or Float.
+  public type Order<X> = (price : X, volume : Nat);
 
-  // A helper class to iterate over the order book. The function `stepAndRead`
-  // reads the next order from the iterator if `shouldStep` is true, otherwise
-  // it returns the last order. In case of the last order it overrides the
-  // volume with 0 to make it easier for the caller to accumulate volume without
-  // double-counting volume.
-  class OrderBook(iter : Iter.Iter<Order>) {
-    var lastPrice : Float = 0;
-    public func stepAndRead(shouldStep : Bool) : ?Order {
-      if (shouldStep) {
-        let ?x = iter.next() else return null;
-        assert x.0 > 0 and x.0 < 1 / 0; 
-        lastPrice := x.0;
-        return ?x;
-      } else {
-        return ?(lastPrice, 0);
-      };
-    };
+  public type priceResult<X> = (
+    price : X,
+    volume : Nat,
+  );
+  public type rangeResult<X> = {
+    range : (X, X);
+    volume : Nat;
   };
 
   /// Clearing algorithm for a volume maximising uniform-price auction
@@ -45,13 +39,13 @@ module {
   /// Suppose we have a single trading pair with base currency X and quote currency Y.
   /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price.
   /// The algorithm will then find the price point at which the maximum volume of orders can be executed.
-  /// It returns that price and the volume that can be executed at that price.
+  /// It returns that price point and the volume that can be executed at that price.
   ///
   /// In a volume maximising auction all participants get their trades executed in one event,
   /// at the same time and at the same price.
   /// Or, if their orders missed the execution price then they are not executed at all.
   ///
-  /// A bid order and ask order is a pair of price (type Float) and volume (type Nat).
+  /// A bid order and ask order is a pair of price and volume.
   /// The price is denominated in Y and the volume is denominated in X.
   /// The price means the price for the smallest unit of Y and is measured in the smallest unit of X.
   /// The volume is measured in the smallest unit of Y.
@@ -66,41 +60,104 @@ module {
   /// All orders whose volume was accumulated during the walks will be executed.
   /// We say these order were "matched".
   ///
+  /// The price type is generic and is provided as a type parameter.
+  /// For example, it can be Float, Nat or Int.
+  /// The caller has to supply a comparison function `less` for the price type.
+  /// Since the algorithm uses only the comparison function `less`,
+  /// it has no notion of a "valid price range".
+  /// For price type Float, for example, the algorithm will work fine with negative prices, zero and infinity.
+  ///
+  /// The volume type is Nat.
+  ///
   /// # Parameters:
-  /// - `asks: Iter.Iter<Order>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
-  /// - `bids: Iter.Iter<Order>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
+  /// - `asks: Iter.Iter<Order<X>>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
+  /// - `bids: Iter.Iter<Order<X>>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
+  /// - `less: (X,X) -> Bool`: comparison function
   ///
   /// # Returns:
-  /// - `trap` if an order price <= 0 or infinity is encountered.
+  /// - `price: X`: The determined execution price that maximises volume.
   /// - `volume: Nat`: The total matched volume at the determined price.
-  /// - `price: Float`: The determined execution price that maximises volume.
   ///
-  /// The price is determined by the lowest matched matched ask order.
-  /// If no order can be matched then volume and price are both returned as zero.
-  public func clearAuction(
-    asksIter : Iter.Iter<Order>,
-    bidsIter : Iter.Iter<Order>,
-  ) : (price : Float, volume : Nat) {
+  /// The price is determined by the lowest matched ask order.
+  /// The returned value is `null` if no order can be matched.
+  ///
+  /// The algorithm accepts orders with volume 0. Such orders have no influence on the return values.
+  /// The algorithm also accepts multiple orders in a row with the same price. 
+  public func clear<X>(
+    asks : Iter.Iter<Order<X>>,
+    bids : Iter.Iter<Order<X>>,
+    less : (X, X) -> Bool,
+  ) : ?(price : X, volume : Nat) {
+    let ?first_ask = asks.next() else return null;
+    var price = first_ask.0;
+    var askVolume = first_ask.1; // (cumulative)
+    var bidVolume = 0; // (cumulative)
 
-    let askSide = OrderBook(asksIter);
-    let bidSide = OrderBook(bidsIter);
-
-    var clearingPrice : Float = 0;
-    var bidVolume = 0; // cumulative volume on bid side
-    var askVolume = 0; // cumulative volume on ask side
-
+    // loop invariant: askVolume >= bidVolume
     label L loop {
-      let shouldStepBids = bidVolume <= askVolume;
-      let shouldStepAsks = askVolume <= bidVolume;
-      let ?bid = bidSide.stepAndRead(shouldStepBids) else break L;
-      let ?ask = askSide.stepAndRead(shouldStepAsks) else break L;
-      if (bid.0 < ask.0) break L;
-      clearingPrice := ask.0;
+      let ?bid = bids.next() else break L;
+      if (less(bid.0, price)) break L;
       bidVolume += bid.1;
-      askVolume += ask.1;
+      label W while (askVolume < bidVolume) {
+        let ?ask = asks.next() else break L;
+        if (less(bid.0, ask.0)) break L;
+        if (ask.1 == 0) continue W; // skip 0 volume asks
+        price := ask.0;
+        askVolume += ask.1;
+      };
     };
 
-    (clearingPrice, Nat.min(askVolume, bidVolume));
+    let vol = Nat.min(askVolume, bidVolume);
+    if (vol == 0) return null;
+    return ?(price, vol);
+  };
+
+  /// Clearing algorithm for a volume maximising uniform-price auction
+  ///
+  /// Compared to `clearAuction` this functions returns the full range of maximum trade volume.
+  public func clearRange<X>(
+    asks : Iter.Iter<Order<X>>,
+    bids : Iter.Iter<Order<X>>,
+    less : (X, X) -> Bool,
+  ) : ?{
+    range : (X, X);
+    volume : Nat;
+  } {
+    let ?first_ask = asks.next() else return null;
+    var askPrice = first_ask.0;
+    var bidPrice : ?X = null;
+    var askVolume = first_ask.1; // (cumulative)
+    var bidVolume = 0; // (cumulative)
+
+    // loop invariant: askVolume >= bidVolume
+    label L loop {
+      // first check whether the loop invariant holds with > or ==
+      // if > then the next bid will become part of the clearing
+      // if == then the next bid may become part of the clearing but needs another ask to match it
+      let askNeeded = askVolume == bidVolume;
+
+      let ?bid = bids.next() else break L;
+      if (less(bid.0, askPrice)) break L;
+      if (bid.1 == 0) continue L; // skip 0 volume bids
+      bidVolume += bid.1;
+      if (not askNeeded) bidPrice := ?bid.0; // if askNeeded then do this later below
+      label W while (askVolume < bidVolume) {
+        let ?ask = asks.next() else break L;
+        if (less(bid.0, ask.0)) break L;
+        if (ask.1 == 0) continue W; // skip 0 volume asks
+        if (askNeeded) bidPrice := ?bid.0;
+        askPrice := ask.0;
+        askVolume += ask.1;
+      };
+    };
+
+    let volume = Nat.min(askVolume, bidVolume);
+    if (volume == 0) return null;
+    let range = switch (bidPrice) {
+      case (?b) (askPrice, b);
+      case (null) Debug.trap("should not happen");
+    };
+    return ?{ range; volume };
   };
 
 };

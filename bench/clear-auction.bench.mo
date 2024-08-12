@@ -1,13 +1,23 @@
 import Array "mo:base/Array";
 import Bench "mo:bench";
+import Float "mo:base/Float";
 import Iter "mo:base/Iter";
 import Nat "mo:base/Nat";
 import Prim "mo:prim";
 import Text "mo:base/Text";
 
-import { clearAuction } "../src";
+import Auction "../src";
 
 module {
+
+  type Order = Auction.Order<Float>;
+
+  func clearAuction(
+    asks : Iter.Iter<Order>,
+    bids : Iter.Iter<Order>,
+  ) : ?Auction.priceResult<Float> {
+    Auction.clear<Float>(asks, bids, Float.less);
+  };
 
   public func init() : Bench.Bench {
     let bench = Bench.Bench();
@@ -35,7 +45,7 @@ module {
     bench.rows(rows);
     bench.cols(cols);
 
-    let envs = Array.tabulate<(asks : Iter.Iter<(price : Float, volume : Nat)>, bids : Iter.Iter<(price : Float, volume : Nat)>, res : (price : Float, volume : Nat))>(
+    let envs = Array.tabulate<(asks : Iter.Iter<(price : Float, volume : Nat)>, bids : Iter.Iter<(price : Float, volume : Nat)>, res : ?(price : Float, volume : Nat))>(
       rows.size() * cols.size(),
       func(i) {
         let row : Nat = i % rows.size();
@@ -67,8 +77,8 @@ module {
           Array.vals(asks),
           Array.vals(bids),
           switch (nAsks, nBids) {
-            case ((0, _) or (_, 0)) (0.0, 0);
-            case (_) (criticalPrice, dealVolume);
+            case ((0, _) or (_, 0)) null;
+            case (_) ?(criticalPrice, dealVolume);
           },
         );
       },
@@ -80,11 +90,10 @@ module {
         let ?ri = Array.indexOf<Text>(row, rows, Text.equal) else Prim.trap("Cannot determine row: " # row);
         let (asks, bids, expectedResult) = envs[ci * rows.size() + ri];
 
-        let result = clearAuction(asks, bids);
+        let result = clearAuction(asks, bids); 
 
         // make sure everything worked as expected
-        assert result.0 == expectedResult.0;
-        assert result.1 == expectedResult.1;
+        assert result == expectedResult;
       }
     );
 
