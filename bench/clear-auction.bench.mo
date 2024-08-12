@@ -6,17 +6,17 @@ import Nat "mo:base/Nat";
 import Prim "mo:prim";
 import Text "mo:base/Text";
 
-import Clear "../src";
+import Auction "../src";
 
 module {
 
-  type Order = Clear.Order<Float>;
+  type Order = Auction.Order<Float>;
 
   func clearAuction(
     asks : Iter.Iter<Order>,
     bids : Iter.Iter<Order>,
-  ) : ?Clear.priceResult<Float> {
-    Clear.clearAuction<Float>(asks, bids, Float.less);
+  ) : ?Auction.priceResult<Float> {
+    Auction.clearAuction<Float>(asks, bids, Float.less);
   };
 
   public func init() : Bench.Bench {

@@ -2,21 +2,21 @@ import Float "mo:base/Float";
 import Iter "mo:base/Iter";
 import Prim "mo:prim";
 
-import Clear "../src";
+import Auction "../src";
 
-type Order = Clear.Order<Float>;
+type Order = Auction.Order<Float>;
 
 func clearAuction(
   asks : Iter.Iter<Order>,
   bids : Iter.Iter<Order>,
-) : ?Clear.priceResult<Float> {
-  Clear.clearAuction<Float>(asks, bids, Float.less);
+) : ?Auction.priceResult<Float> {
+  Auction.clearAuction<Float>(asks, bids, Float.less);
 };
 func clearAuctionRange(
   asks : Iter.Iter<Order>,
   bids : Iter.Iter<Order>,
-) : ?Clear.rangeResult<Float> {
-  Clear.clearAuctionRange<Float>(asks, bids, Float.less);
+) : ?Auction.rangeResult<Float> {
+  Auction.clearAuctionRange<Float>(asks, bids, Float.less);
 };
 
 do {
