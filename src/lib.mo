@@ -2,7 +2,7 @@
 ///
 /// Copyright: 2024 MR Research AG
 /// Author: Timo Hanke (timohanke)
-/// Contributors: Andy Gura (AndyGura) 
+/// Contributors: Andy Gura (AndyGura)
 
 import Debug "mo:base/Debug";
 import Iter "mo:base/Iter";
@@ -21,8 +21,14 @@ import Nat "mo:base/Nat";
 module {
 
   /// Orders are specified by a limit price measured in quote currency and a volume measured in base currency.
+  /// The price type is generic and is required to have a comparison function `less`.
+  /// Typically prices are Nat, Int or Float.
   public type Order<X> = (price : X, volume : Nat);
-  public type priceResult<X> = (price : X, volume : Nat);
+
+  public type priceResult<X> = (
+    price : X,
+    volume : Nat,
+  );
   public type rangeResult<X> = {
     range : (X, X);
     volume : Nat;
@@ -56,14 +62,10 @@ module {
   ///
   /// The price type is generic and is provided as a type parameter.
   /// For example, it can be Float, Nat or Int.
-  /// The caller has to supply a comparison function `less` for the price type
-  /// and a dummy value of the price type which can be returned as a dummy value when there are no matching orders.
+  /// The caller has to supply a comparison function `less` for the price type.
   /// Since the algorithm uses only the comparison function `less`,
   /// it has no notion of a "valid price range".
   /// For price type Float, for example, the algorithm will work fine with negative prices, zero and infinity.
-  ///
-  /// The algorithm accepts all possible Float values as prices including 0, infinity and negative values.
-  /// This is possible because only the relative order of prices matters, not their actual arithmetic value.
   ///
   /// The volume type is Nat.
   ///
@@ -71,17 +73,16 @@ module {
   /// - `asks: Iter.Iter<Order<X>>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
   /// - `bids: Iter.Iter<Order<X>>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
   /// - `less: (X,X) -> Bool`: comparison function
-  /// - `dummyPrice: X`: an arbitrary value of type X
   ///
   /// # Returns:
-  /// - `volume: Nat`: The total matched volume at the determined price.
   /// - `price: X`: The determined execution price that maximises volume.
+  /// - `volume: Nat`: The total matched volume at the determined price.
   ///
   /// The price is determined by the lowest matched ask order.
-  /// The returned volume is 0 if and only if no order can be matched.
-  /// In this case the price is meaningless and the provided dummy price is returned.
+  /// The returned value is `null` if no order can be matched.
   ///
   /// The algorithm accepts orders with volume 0. Such orders have no influence on the return values.
+  /// The algorithm also accepts multiple orders in a row with the same price. 
   public func clearAuction<X>(
     asks : Iter.Iter<Order<X>>,
     bids : Iter.Iter<Order<X>>,
