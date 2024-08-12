@@ -10,13 +10,13 @@ func clearAuction(
   asks : Iter.Iter<Order>,
   bids : Iter.Iter<Order>,
 ) : ?Auction.priceResult<Float> {
-  Auction.clearAuction<Float>(asks, bids, Float.less);
+  Auction.clear<Float>(asks, bids, Float.less);
 };
 func clearAuctionRange(
   asks : Iter.Iter<Order>,
   bids : Iter.Iter<Order>,
 ) : ?Auction.rangeResult<Float> {
-  Auction.clearAuctionRange<Float>(asks, bids, Float.less);
+  Auction.clearRange<Float>(asks, bids, Float.less);
 };
 
 do {

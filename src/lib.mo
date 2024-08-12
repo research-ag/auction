@@ -83,7 +83,7 @@ module {
   ///
   /// The algorithm accepts orders with volume 0. Such orders have no influence on the return values.
   /// The algorithm also accepts multiple orders in a row with the same price. 
-  public func clearAuction<X>(
+  public func clear<X>(
     asks : Iter.Iter<Order<X>>,
     bids : Iter.Iter<Order<X>>,
     less : (X, X) -> Bool,
@@ -115,7 +115,7 @@ module {
   /// Clearing algorithm for a volume maximising uniform-price auction
   ///
   /// Compared to `clearAuction` this functions returns the full range of maximum trade volume.
-  public func clearAuctionRange<X>(
+  public func clearRange<X>(
     asks : Iter.Iter<Order<X>>,
     bids : Iter.Iter<Order<X>>,
     less : (X, X) -> Bool,

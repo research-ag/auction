@@ -16,7 +16,7 @@ module {
     asks : Iter.Iter<Order>,
     bids : Iter.Iter<Order>,
   ) : ?Auction.priceResult<Float> {
-    Auction.clearAuction<Float>(asks, bids, Float.less);
+    Auction.clear<Float>(asks, bids, Float.less);
   };
 
   public func init() : Bench.Bench {
