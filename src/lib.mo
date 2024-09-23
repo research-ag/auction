@@ -29,10 +29,6 @@ module {
     price : X,
     volume : Nat,
   );
-  public type rangeResult<X> = {
-    range : (X, X);
-    volume : Nat;
-  };
 
   /// Clearing algorithm for a volume maximising uniform-price auction
   ///
@@ -99,13 +95,13 @@ module {
     label L loop {
       let ?bid = bids.next() else break L;
       if (less(bid.0, askPrice)) break L;
-      if (bid.1 == 0) continue L; // skip 0 volume bids
+      // optional: if (bid.1 == 0) continue L;
       bidVolume += bid.1;
       bidPrice := ?bid.0;
       label W while (askVolume < bidVolume) {
         let ?ask = asks.next() else break L;
         if (less(bid.0, ask.0)) break L;
-        if (ask.1 == 0) continue W; // skip 0 volume asks
+        // optional: if (ask.1 == 0) continue W;
         askPrice := ask.0;
         askVolume += ask.1;
       };

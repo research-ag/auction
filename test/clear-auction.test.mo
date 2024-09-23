@@ -144,7 +144,6 @@ do {
 
 do {
   Prim.debugPrint("Zero volume ask could affect range.");
-  // TODO: needs to be adjusted to test the intented thing
   let orders : ([Order], [Order]) = (
     [(10, 10), (10, 0)], // asks ascending
     [(30, 10), (25, 10)], // bids descending
