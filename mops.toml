@@ -15,4 +15,4 @@ bench = "1.0.0"
 
 [toolchain]
 moc = "0.13.6"
-pocket-ic = "4.0.0"
+pocket-ic = "1.0.0"
