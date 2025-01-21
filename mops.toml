@@ -3,7 +3,7 @@ name = "auction"
 version = "3.0.0"
 description = "Clearing algorithm for volume maximising uniform-price auction"
 repository = "https://github.com/research-ag/auction"
-keywords = [ "exchange", "tokens", "order matching" ]
+keywords = [ "exchange", "tokens", "order-matching" ]
 license = "Apache-2.0"
 
 [dependencies]
