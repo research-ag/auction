@@ -103,6 +103,45 @@ do {
 };
 
 do {
+  Prim.debugPrint("README example 1");
+  let orders : ([Order], [Order]) = (
+    [(50, 100), (60, 100), (70, 100)],
+    [(70, 100), (60, 100), (50, 100)], 
+  );
+  let expect = (60.0, 200);
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.1);
+};
+
+do {
+  Prim.debugPrint("README example 2");
+  let orders : ([Order], [Order]) = (
+    [(0, 100)],
+    [(100, 20), (90, 20), (80, 20), (70, 20), (60, 20), (50, 20), (40, 20)], 
+  );
+  let expect = (50.0, 100);
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.1);
+};
+
+do {
+  Prim.debugPrint("README example 3");
+  let orders : ([Order], [Order]) = (
+    [(50, 100), (60, 100), (70, 100)],
+    [(40, 100), (30, 100), (20, 100)], 
+  );
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == null;
+};
+
+do {
+  Prim.debugPrint("README example 4");
+  let orders : ([Order], [Order]) = (
+    [(50, 50), (60, 30), (70, 100)],
+    [(80, 100), (60, 20)], 
+  );
+  let expect = (70.0, 100);
+  assert clearAuction(orders.0.vals(), orders.1.vals()) == ?(expect.0, expect.1);
+};
+
+do {
   Prim.debugPrint("Negative prices");
   let orders : ([Order], [Order]) = (
     [(-30, 10), (-20, 10), (-10, 10)], // asks ascending

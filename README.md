@@ -105,12 +105,12 @@ let bids = [
 ];
 Auction.clear(asks.vals(), bids.vals(), Float.less);
 
-// => ?(60.0, 100)
+// => ?(50.0, 100)
 ```
 
 Here, a single market sell order (ask)
 is fully matched by multiple buy orders (bids).
-The price is the highest price needed to fully match the sell order.
+The price is taken from where the bid volume exceeds the ask volume.
 
 #### Example 3
 
@@ -172,7 +172,7 @@ mops test
 
 Run
 ```
-mops bench --replica pocket-ic
+mops bench
 ```
 
 ## Copyright
