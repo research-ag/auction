@@ -7,7 +7,7 @@ keywords = [ "exchange", "tokens", "order matching" ]
 license = "Apache-2.0"
 
 [dependencies]
-base = "0.13.6"
+base = "0.13.4"
 
 [dev-dependencies]
 test = "2.0.0"
