@@ -28,8 +28,5 @@ jobs:
       - name: Run tests
         run: mops test
 
-      - name: Make sure pocket-ic is installed
-        run: mops install
-
       - name: Run mops bench
-        run: mops bench --replica pocket-ic
+        run: mops bench
