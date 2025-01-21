@@ -15,7 +15,7 @@ jobs:
         uses: actions/setup-node@v4
 
       - name: Install mops
-        uses: ZenVoich/setup-mops@v1.4.1
+        uses: ZenVoich/setup-mops@v1
 
       - name: Make sure moc is installed
         run: mops toolchain bin moc || mops toolchain use moc latest

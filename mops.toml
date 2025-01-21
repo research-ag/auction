@@ -1,13 +1,13 @@
 [package]
 name = "auction"
-version = "2.1.0"
+version = "3.0.0"
 description = "Clearing algorithm for volume maximising uniform-price auction"
 repository = "https://github.com/research-ag/auction"
 keywords = [ "exchange", "tokens", "order matching" ]
 license = "Apache-2.0"
 
 [dependencies]
-base = "0.13.4"
+base = "0.13.6"
 
 [dev-dependencies]
 test = "2.0.0"
