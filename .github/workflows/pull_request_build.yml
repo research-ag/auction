@@ -17,6 +17,9 @@ jobs:
       - name: Install mops
         uses: ZenVoich/setup-mops@v1
 
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
+
       - name: Make sure moc is installed
         run: mops toolchain bin moc || mops toolchain use moc latest
 
