@@ -7,12 +7,12 @@ keywords = [ "exchange", "tokens", "order matching" ]
 license = "Apache-2.0"
 
 [dependencies]
-base = "0.13.6"
+base = "0.13.5"
 
 [dev-dependencies]
 test = "2.0.0"
 bench = "1.0.0"
 
 [toolchain]
-moc = "0.13.6"
+moc = "0.13.5"
 pocket-ic = "4.0.0"
