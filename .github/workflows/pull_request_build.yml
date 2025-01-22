@@ -15,7 +15,10 @@ jobs:
         uses: actions/setup-node@v4
 
       - name: Install mops
-        uses: ZenVoich/setup-mops@v1.2.0
+        uses: ZenVoich/setup-mops@v1
+
+      - name: Install dfx
+        uses: dfinity/setup-dfx@main
 
       - name: Make sure moc is installed
         run: mops toolchain bin moc || mops toolchain use moc latest
@@ -28,8 +31,5 @@ jobs:
       - name: Run tests
         run: mops test
 
-      - name: Make sure pocket-ic is installed
-        run: mops install
-
       - name: Run mops bench
-        run: mops bench --replica pocket-ic
+        run: mops bench

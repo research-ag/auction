@@ -1,5 +1,12 @@
 # Auction changelog
 
+## 3.0.0
+
+* Updated tie-break strategy: now we take the side of the range that has the higher order volume
+* Removed `clearRange` function and `rangeResult` type
+* Bug fixes
+* Bumped moc dependencies to 0.13.6
+
 ## 2.0.0
 
 * Improved algorithm 30% faster
