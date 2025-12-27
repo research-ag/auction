@@ -1,9 +1,9 @@
-import Array "mo:base/Array";
-import Bench "mo:bench";
+import Array "mo:core/Array";
 import Float "mo:core/Float";
 import Nat "mo:core/Nat";
 import Text "mo:core/Text";
 import Types "mo:core/Types";
+import Bench "mo:bench";
 import Prim "mo:prim";
 
 import Auction "../src";
@@ -74,8 +74,8 @@ module {
           func(n) = (criticalPrice + Prim.intToFloat((nBids - 1 - n)) * 0.1, dealVolume / Nat.max(nBids, 1)),
         );
         (
-          Array.vals(asks),
-          Array.vals(bids),
+          Array.values(asks),
+          Array.values(bids),
           switch (nAsks, nBids) {
             case ((0, _) or (_, 0)) null;
             case (_) ?(criticalPrice, dealVolume);
@@ -86,8 +86,8 @@ module {
 
     bench.runner(
       func(row, col) {
-        let ?ci = Array.indexOf<Text>(col, cols, Text.equal) else Prim.trap("Cannot determine column: " # col);
-        let ?ri = Array.indexOf<Text>(row, rows, Text.equal) else Prim.trap("Cannot determine row: " # row);
+        let ?ci = Array.indexOf<Text>(cols, Text.equal, col) else Prim.trap("Cannot determine column: " # col);
+        let ?ri = Array.indexOf<Text>(rows, Text.equal, row) else Prim.trap("Cannot determine row: " # row);
         let (asks, bids, expectedResult) = envs[ci * rows.size() + ri];
 
         let result = clearAuction(asks, bids);
