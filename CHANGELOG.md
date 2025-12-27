@@ -1,5 +1,9 @@
 # Auction changelog
 
+## 3.0.1
+
+* Switch from base to core 2.0.0
+
 ## 3.0.0
 
 * Updated tie-break strategy: now we take the side of the range that has the higher order volume
