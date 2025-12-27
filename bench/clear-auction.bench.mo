@@ -1,10 +1,10 @@
-import Array "mo:base/Array";
+import Array "mo:core/Array";
+import Float "mo:core/Float";
+import Nat "mo:core/Nat";
+import Text "mo:core/Text";
+import Types "mo:core/Types";
 import Bench "mo:bench";
-import Float "mo:base/Float";
-import Iter "mo:base/Iter";
-import Nat "mo:base/Nat";
 import Prim "mo:prim";
-import Text "mo:base/Text";
 
 import Auction "../src";
 
@@ -13,8 +13,8 @@ module {
   type Order = Auction.Order<Float>;
 
   func clearAuction(
-    asks : Iter.Iter<Order>,
-    bids : Iter.Iter<Order>,
+    asks : Types.Iter<Order>,
+    bids : Types.Iter<Order>,
   ) : ?Auction.priceResult<Float> {
     Auction.clear<Float>(asks, bids, Float.less);
   };
@@ -45,7 +45,7 @@ module {
     bench.rows(rows);
     bench.cols(cols);
 
-    let envs = Array.tabulate<(asks : Iter.Iter<(price : Float, volume : Nat)>, bids : Iter.Iter<(price : Float, volume : Nat)>, res : ?(price : Float, volume : Nat))>(
+    let envs = Array.tabulate<(asks : Types.Iter<(price : Float, volume : Nat)>, bids : Types.Iter<(price : Float, volume : Nat)>, res : ?(price : Float, volume : Nat))>(
       rows.size() * cols.size(),
       func(i) {
         let row : Nat = i % rows.size();
@@ -74,8 +74,8 @@ module {
           func(n) = (criticalPrice + Prim.intToFloat((nBids - 1 - n)) * 0.1, dealVolume / Nat.max(nBids, 1)),
         );
         (
-          Array.vals(asks),
-          Array.vals(bids),
+          Array.values(asks),
+          Array.values(bids),
           switch (nAsks, nBids) {
             case ((0, _) or (_, 0)) null;
             case (_) ?(criticalPrice, dealVolume);
@@ -86,11 +86,11 @@ module {
 
     bench.runner(
       func(row, col) {
-        let ?ci = Array.indexOf<Text>(col, cols, Text.equal) else Prim.trap("Cannot determine column: " # col);
-        let ?ri = Array.indexOf<Text>(row, rows, Text.equal) else Prim.trap("Cannot determine row: " # row);
+        let ?ci = Array.indexOf<Text>(cols, Text.equal, col) else Prim.trap("Cannot determine column: " # col);
+        let ?ri = Array.indexOf<Text>(rows, Text.equal, row) else Prim.trap("Cannot determine row: " # row);
         let (asks, bids, expectedResult) = envs[ci * rows.size() + ri];
 
-        let result = clearAuction(asks, bids); 
+        let result = clearAuction(asks, bids);
 
         // make sure everything worked as expected
         assert result == expectedResult;

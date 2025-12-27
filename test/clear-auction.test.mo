@@ -1,5 +1,5 @@
-import Float "mo:base/Float";
-import Iter "mo:base/Iter";
+import Float "mo:core/Float";
+import Types "mo:core/Types";
 import Prim "mo:prim";
 
 import Auction "../src";
@@ -7,8 +7,8 @@ import Auction "../src";
 type Order = Auction.Order<Float>;
 
 func clearAuction(
-  asks : Iter.Iter<Order>,
-  bids : Iter.Iter<Order>,
+  asks : Types.Iter<Order>,
+  bids : Types.Iter<Order>,
 ) : ?Auction.priceResult<Float> {
   Auction.clear<Float>(asks, bids, Float.less);
 };

@@ -9,13 +9,10 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
-
-      - name: Install Node
-        uses: actions/setup-node@v4
+        uses: actions/checkout@v6
 
       - name: Install mops
-        uses: ZenVoich/setup-mops@v1
+        uses: caffeinelabs/setup-mops@v1
 
       - name: Install dfx
         uses: dfinity/setup-dfx@main

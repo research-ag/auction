@@ -4,9 +4,9 @@
 /// Author: Timo Hanke (timohanke)
 /// Contributors: Andy Gura (AndyGura)
 
-import Debug "mo:base/Debug";
-import Iter "mo:base/Iter";
-import Nat "mo:base/Nat";
+import Nat "mo:core/Nat";
+import Runtime "mo:core/Runtime";
+import Types "mo:core/Types";
 
 /// Clearing algorithm for a volume maximising uniform-price auction
 ///
@@ -66,8 +66,8 @@ module {
   /// The volume type is Nat.
   ///
   /// # Parameters:
-  /// - `asks: Iter.Iter<Order<X>>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
-  /// - `bids: Iter.Iter<Order<X>>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
+  /// - `asks: Types.Iter<Order<X>>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
+  /// - `bids: Types.Iter<Order<X>>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
   /// - `less: (X,X) -> Bool`: comparison function
   ///
   /// # Returns:
@@ -81,8 +81,8 @@ module {
   /// The algorithm accepts orders with volume 0. Such orders have no influence on the return values.
   /// The algorithm also accepts multiple orders in a row with the same price.
   public func clear<X>(
-    asks : Iter.Iter<Order<X>>,
-    bids : Iter.Iter<Order<X>>,
+    asks : Types.Iter<Order<X>>,
+    bids : Types.Iter<Order<X>>,
     less : (X, X) -> Bool,
   ) : ?(price : X, volume : Nat) {
     let ?first_ask = asks.next() else return null;
@@ -109,7 +109,7 @@ module {
 
     let volume = Nat.min(askVolume, bidVolume);
     if (volume == 0) return null;
-    let ?b = bidPrice else Debug.trap("should not happen");
+    let ?b = bidPrice else Runtime.trap("should not happen");
     let price = if (bidVolume > askVolume) b else askPrice;
     return ?(price, volume);
   };
