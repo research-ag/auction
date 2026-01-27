@@ -1,5 +1,9 @@
 # Auction changelog
 
+## 3.0.3
+
+* Improve benchmark accuracy
+
 ## 3.0.2
 
 * Remove unused `test` dependency
