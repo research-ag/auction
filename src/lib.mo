@@ -26,31 +26,27 @@ module {
   /// The price is expected to encode the price of one unit of the base currency in units of the quote currency.
   /// The units used in the price definition can be arbitrarily chosen by the application.
   /// The unit of the base currency used in the price does not have to be the same as the unit used in the volume.
-  public type Order<X> = (price : X, volume : Nat);
+  public type Order<T> = (price : T, volume : Nat);
 
   /// The `priceResult` is the result of the clearing algorithm.
   /// It consists of a price and a volume called the "clearing price" and the "matched volume".
   /// They are in the same units as the price and volume used in `Order`.
-  public type priceResult<X> = (
-    price : X,
+  public type priceResult<T> = (
+    price : T,
     volume : Nat,
   );
 
-  /// The `clear` function takes the order book in the form of a list of bids and a list of asks
+  /// The `clear` function takes the order book in the form of ordered bids and ordered asks
   /// and calculates the `priceResult`.
   ///
-  /// The algorithm requires as input an list of bid order sorted in descending order of price and a list of ask orders sorted in ascending order of price.
+  /// The algorithm requires as input an iterator that returns all bid orders in descending order of price.
+  /// Similarly, it requires an iterator that returns all ask orders in ascending order of price.
   /// The algorithm will then find the price point at which the maximum volume of orders can be executed.
   /// It returns that price point and the volume that can be executed at that price.
   ///
   /// In a volume maximising auction all participants get their trades executed in one event,
   /// at the same time and at the same price.
   /// Or, if their orders missed the execution price then they are not executed at all.
-  ///
-  /// A bid order and ask order is a pair of price and volume.
-  /// The price is denominated in quote currency `Y` and the volume is denominated in base currency `X`.
-  /// The price means the price for a fixed unit of `Y` and is measured in a fixed unit of `X`.
-  /// The volume is measured in the smallest unit of `Y`.
   ///
   /// Roughly speaking, the algorithm works as follows:
   /// We walk along ascending price on the ask side and, for each price point, accumulate the volume of all ask orders up to that price.
@@ -68,12 +64,12 @@ module {
   /// For price type `Float`, for example, the algorithm will work fine with negative prices, zero and infinity.
   ///
   /// Parameters:
-  /// - `asks: Types.Iter<Order<X>>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
-  /// - `bids: Types.Iter<Order<X>>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
-  /// - `less: (X,X) -> Bool`: comparison function
+  /// - `asks: Types.Iter<Order<T>>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
+  /// - `bids: Types.Iter<Order<T>>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
+  /// - `less: (T,T) -> Bool`: comparison function
   ///
   /// Returns:
-  /// - `price: X`: The determined execution price that maximises volume.
+  /// - `price: T`: The determined execution price that maximises volume.
   /// - `volume: Nat`: The total matched volume at the determined price.
   ///
   /// First, the price range is determined which maximises the matched volume.
@@ -82,14 +78,14 @@ module {
   ///
   /// The algorithm accepts orders with volume `0`. Such orders have no influence on the return values.
   /// The algorithm also accepts multiple orders in a row with the same price.
-  public func clear<X>(
-    asks : Types.Iter<Order<X>>,
-    bids : Types.Iter<Order<X>>,
-    less : (X, X) -> Bool,
-  ) : ?(price : X, volume : Nat) {
+  public func clear<T>(
+    asks : Types.Iter<Order<T>>,
+    bids : Types.Iter<Order<T>>,
+    less : (T, T) -> Bool,
+  ) : ?(price : T, volume : Nat) {
     let ?first_ask = asks.next() else return null;
     var askPrice = first_ask.0;
-    var bidPrice : ?X = null;
+    var bidPrice : ?T = null;
     var askVolume = first_ask.1; // (cumulative)
     var bidVolume = 0; // (cumulative)
 
