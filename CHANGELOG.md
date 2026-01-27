@@ -1,5 +1,10 @@
 # Auction changelog
 
+## 3.0.2
+
+* Remove unused `test` dependency
+* Improve documentation
+
 ## 3.0.1
 
 * Switch from base to core 2.0.0
