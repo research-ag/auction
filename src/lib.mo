@@ -10,8 +10,10 @@
 /// - Sorting the orders by ascending price for ask orders and descending price for bid orders.
 /// - Executing the trades at the determined price.
 ///
-/// Copyright: 2024 MR Research AG\
-/// Author: Timo Hanke (timohanke)<br>  
+/// Copyright: 2024 MR Research AG
+///
+/// Author: Timo Hanke (timohanke)
+///
 /// Contributors: Andy Gura (AndyGura)
 
 import Nat "mo:core/Nat";
