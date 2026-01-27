@@ -5,12 +5,13 @@
 /// It finds the single price point at which the maximum volume of orders can be executed.
 ///
 /// The application code, not this package, is responsible for:
+///
 /// - Collecting orders from participants. It usually keeps orders hidden from the public until clearing happens.
 /// - Sorting the orders by ascending price for ask orders and descending price for bid orders.
 /// - Executing the trades at the determined price.
 ///
-/// Copyright: 2024 MR Research AG  
-/// Author: Timo Hanke (timohanke)  
+/// Copyright: 2024 MR Research AG\
+/// Author: Timo Hanke (timohanke)<br>  
 /// Contributors: Andy Gura (AndyGura)
 
 import Nat "mo:core/Nat";
@@ -64,11 +65,13 @@ module {
   /// For price type `Float`, for example, the algorithm will work fine with negative prices, zero and infinity.
   ///
   /// Parameters:
+  ///
   /// - `asks: Types.Iter<Order<T>>`: An iterator over the ask orders. Must be in ascending (precisely: non-descending) order of price.
   /// - `bids: Types.Iter<Order<T>>`: An iterator over the bid orders. Must be in descending (precisely: non-ascending) order of price.
   /// - `less: (T,T) -> Bool`: comparison function
   ///
   /// Returns:
+  ///
   /// - `price: T`: The determined execution price that maximises volume.
   /// - `volume: Nat`: The total matched volume at the determined price.
   ///
