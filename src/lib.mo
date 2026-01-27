@@ -82,7 +82,7 @@ module {
     asks : Types.Iter<Order<T>>,
     bids : Types.Iter<Order<T>>,
     less : (T, T) -> Bool,
-  ) : ?(price : T, volume : Nat) {
+  ) : ?priceResult<T> {
     let ?first_ask = asks.next() else return null;
     var askPrice = first_ask.0;
     var bidPrice : ?T = null;
