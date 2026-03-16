@@ -1,5 +1,10 @@
 # Auction changelog
 
+## 3.0.4
+
+* Bump core dependency
+* Simplify bench code (needs mops >= 2.1.0)
+
 ## 3.0.3
 
 * Improve benchmark accuracy
