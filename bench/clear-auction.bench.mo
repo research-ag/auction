@@ -20,14 +20,6 @@ module {
     public func getVersion() : Nat = 1;
     public func getSchema() : Schema = schema;
     public let runCell = run;
-
-    // unused stuff just to satisfy types
-    public func name(_ : Text) {};
-    public func description(_ : Text) {};
-    public func rows(_ : [Text]) {};
-    public func cols(_ : [Text]) {};
-    public func runner(_ : (Text, Text) -> ()) {};
-    // end unused stuff
   };
 
   func clearAuction(
