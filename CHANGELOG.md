@@ -1,5 +1,10 @@
 # Auction changelog
 
+## 3.0.5
+
+* Use bench-helper package
+* Bump core dependency
+
 ## 3.0.4
 
 * Bump core dependency
