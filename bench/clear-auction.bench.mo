@@ -1,27 +1,16 @@
 import Array "mo:core/Array";
 import Float "mo:core/Float";
+import _Int "mo:core/Int";
 import Nat "mo:core/Nat";
+import Runtime "mo:core/Runtime";
 import Types "mo:core/Types";
-import Prim "mo:prim";
+import Bench "mo:bench-helper";
 
 import Auction "../src";
 
 module {
   type Order = Auction.Order<Float>;
   
-  type Schema = {
-    name : Text;
-    description : Text;
-    rows : [Text];
-    cols : [Text];
-  };
-
-  class BenchV1(schema : Schema, run : (Nat, Nat) -> ()) {
-    public func getVersion() : Nat = 1;
-    public func getSchema() : Schema = schema;
-    public let runCell = run;
-  };
-
   func clearAuction(
     asks : Types.Iter<Order>,
     bids : Types.Iter<Order>,
@@ -29,8 +18,8 @@ module {
     Auction.clear<Float>(asks, bids, Float.less);
   };
 
-  public func init() : BenchV1 {
-    let schema : Schema = {
+  public func init() : Bench.V1 {
+    let schema : Bench.Schema = {
       name = "Orders matching";
       description = "Read bids and asks in lists with size N/2 each, determine amount of asks and bids to be fulfilled, deal volume and price";
       rows = [
@@ -57,14 +46,14 @@ module {
         let row : Nat = i % nRows;
         let col : Nat = i / nRows;
 
-        let ?nOrders = Nat.fromText(schema.cols[col]) else Prim.trap("Cannot parse nOrders");
+        let ?nOrders = Nat.fromText(schema.cols[col]) else Runtime.trap("Cannot parse nOrders");
         let (nAsks, nBids) = switch (row) {
           case (0) (0, 0);
           case (1) (1, 1);
           case (2) (nOrders / 2, 1);
           case (3) (1, nOrders / 2);
           case (4) (nOrders / 2, nOrders / 2);
-          case (_) Prim.trap("Cannot determine nAsks, nBids");
+          case (_) Runtime.trap("Cannot determine nAsks, nBids");
         };
 
         let dealVolume : Nat = 10_000;
@@ -73,11 +62,11 @@ module {
 
         let asks = Array.tabulate<(price : Float, volume : Nat)>(
           nOrders / 2,
-          func(n) = (criticalPrice - Prim.intToFloat((nAsks - 1 - n)) * 0.1, dealVolume / Nat.max(nAsks, 1)),
+          func(n) = (criticalPrice - (nAsks - 1 - n : Int).toFloat() * 0.1, dealVolume / Nat.max(nAsks, 1)),
         );
         let bids = Array.tabulate<(price : Float, volume : Nat)>(
           nOrders / 2,
-          func(n) = (criticalPrice + Prim.intToFloat((nBids - 1 - n)) * 0.1, dealVolume / Nat.max(nBids, 1)),
+          func(n) = (criticalPrice + (nBids - 1 - n : Int).toFloat() * 0.1, dealVolume / Nat.max(nBids, 1)),
         );
         (
           Array.values(asks),
@@ -97,6 +86,6 @@ module {
       assert result == expectedResult;
     };
 
-    BenchV1(schema, run);
+    Bench.V1(schema, run);
   };
 };
