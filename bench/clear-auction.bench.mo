@@ -10,7 +10,7 @@ import Auction "../src";
 
 module {
   type Order = Auction.Order<Float>;
-  
+
   func clearAuction(
     asks : Types.Iter<Order>,
     bids : Types.Iter<Order>,
