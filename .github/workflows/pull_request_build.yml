@@ -29,10 +29,10 @@ jobs:
           $(mops toolchain bin moc) --version
 
       - name: Run tests
-        run: mops test
+        run: mops test --locked
 
       - name: Run mops bench
-        run: mops bench
+        run: mops bench --locked
 
   fmt:
     name: Formatting Check
