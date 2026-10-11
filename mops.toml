@@ -10,7 +10,7 @@ license = "Apache-2.0"
 core = "2.6.2"
 
 [dev-dependencies]
-bench-helper = "0.0.3"
+bench-helper = "0.0.4"
 
 [toolchain]
 moc = "2.0.0"

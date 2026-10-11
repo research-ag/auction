@@ -1,20 +1,20 @@
 {
   "version": 3,
-  "mopsTomlDepsHash": "b59af4e0ed015ef41ad74c180367c413b420a2c6798011172f9c3f305d6c06fa",
+  "mopsTomlDepsHash": "de4e61c91c1bed6e3d04cd287b490617886b648599da3c988492aff4c38d2b5b",
   "deps": {
-    "bench-helper": "0.0.3",
+    "bench-helper": "0.0.4",
     "core": "2.6.2"
   },
   "graph": {
-    "bench-helper@0.0.3": {},
+    "bench-helper@0.0.4": {},
     "core@2.6.2": {}
   },
   "hashes": {
-    "bench-helper@0.0.3": {
-      "bench-helper@0.0.3/LICENSE": "b9c74cf5b86ce6dc1d415f664aa1b8a08005e2523bdc63a2764f3095df993fc9",
-      "bench-helper@0.0.3/README.md": "e5c05606e6e20b955b0f8abbb730d435c8200f4b14bf9b64d7be4d9cacd53a6a",
-      "bench-helper@0.0.3/mops.toml": "62ce7db32be8b559f07b0e18632eaa651be0702c97b687f01b040c486dd10791",
-      "bench-helper@0.0.3/src/lib.mo": "5eab7fa76b325cf571f6e3a29b80c18116d57e77edec92b4d14c9979183fa93b"
+    "bench-helper@0.0.4": {
+      "bench-helper@0.0.4/LICENSE": "b9c74cf5b86ce6dc1d415f664aa1b8a08005e2523bdc63a2764f3095df993fc9",
+      "bench-helper@0.0.4/README.md": "6792f023368ebea8d9abadfc5ce0b9222733a9899f46b5d2ae34087a300f94c0",
+      "bench-helper@0.0.4/mops.toml": "016babe250b7f6d5f0a17756d1cda2c1028b6cdde2440d83084fa19237c67b7f",
+      "bench-helper@0.0.4/src/lib.mo": "bc08665d800d0e48fb83d21a2a4e83e6d64728bd55672059d19dd478c7589e27"
     },
     "core@2.6.2": {
       "core@2.6.2/LICENSE": "840e3d57a38a8061f55d04470fbd58b9345326fa04ea10ee42add5c6e3b2aa08",
