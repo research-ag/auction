@@ -1,6 +1,6 @@
 # Auction changelog
 
-## 3.0.6
+## 3.1.0
 
 - Bump core dependency from 2.2.0 to 2.6.2
 - Compile warning-free with moc 2.0.0
