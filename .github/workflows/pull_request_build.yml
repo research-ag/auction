@@ -14,8 +14,11 @@ jobs:
       - name: Install mops
         uses: caffeinelabs/setup-mops@v1
 
-      - name: Install dfx
-        uses: dfinity/setup-dfx@main
+      - name: Make sure pocket-ic is installed
+        run: mops toolchain bin pocket-ic
+
+      - name: Make sure wasm-opt is installed
+        run: mops toolchain bin wasm-opt
 
       - name: Make sure moc is installed
         run: mops toolchain bin moc || mops toolchain use moc latest
@@ -26,7 +29,20 @@ jobs:
           $(mops toolchain bin moc) --version
 
       - name: Run tests
-        run: mops test
+        run: mops test --locked
 
       - name: Run mops bench
-        run: mops bench
+        run: mops bench --locked
+
+  fmt:
+    name: Formatting Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: latest
+      - name: Prettier Check
+        run: |
+          npm install prettier prettier-plugin-motoko --no-save
+          npx -y prettier --plugin prettier-plugin-motoko --check '**/*.{mo,json,md}'

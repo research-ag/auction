@@ -22,20 +22,22 @@ API documentation: [here on Mops](https://mops.one/auction/docs)
 
 For updates, help, questions, feedback and other requests related to this package join us on:
 
-* [OpenChat group](https://oc.app/2zyqk-iqaaa-aaaar-anmra-cai)
-* [Twitter](https://twitter.com/mr_research_ag)
-* [Dfinity forum](https://forum.dfinity.org/)
+- [OpenChat group](https://oc.app/2zyqk-iqaaa-aaaar-anmra-cai)
+- [Twitter](https://twitter.com/mr_research_ag)
+- [Dfinity forum](https://forum.dfinity.org/)
 
 ## Usage
 
 ### Install with mops
 
 You need `mops` installed. In your project directory run:
+
 ```
 mops add auction
 ```
 
 In the Motoko source file import the package as:
+
 ```
 import Auction "mo:auction";
 ```
@@ -61,6 +63,7 @@ let bids = [
 ];
 
 Auction.clear(asks.vals(), bids.vals(), Float.less);
+
 ```
 
 Edit and run this template on: [embed.motoko.org](https://embed.motoko.org/motoko/g/QzWqprifHe2NQ7xGqbqnBoy8hqNZsnc3b2jLuzivSPwtbwac47MB7fAWU3LUs3zR3JNA4V2EXBACwEErn1w2dUb9KruaTj5KU52QnDA3PoL3bJMe4UuRdn8VyKpeVyfJizz4TY355hkTTKJZ7xkoYDuNTnVC4w7UWgJ2mzQCL4dXGGKiG3J1J4WxE7CvUx3ja7pXnaHo2Dhyg6Pjg1vhWLg7x4hSgDjd?lines=17)
@@ -83,6 +86,7 @@ let bids = [
 
 Auction.clear(asks.vals(), bids.vals(), Float.less);
 // => ?(60.0, 200)
+
 ```
 
 We see three asks and bids that could individually be matched to each other at three different prices for a total volume of 300.
@@ -106,6 +110,7 @@ let bids = [
 Auction.clear(asks.vals(), bids.vals(), Float.less);
 
 // => ?(50.0, 100)
+
 ```
 
 Here, a single market sell order (ask)
@@ -128,9 +133,10 @@ let bids = [
 Auction.clear(asks.vals(), bids.vals(), Float.less);
 
 // => null
+
 ```
 
-Here, 
+Here,
 the price of the highest bid is lower than a price of the lowest ask,
 hence no volume can be exchanged.
 
@@ -149,17 +155,19 @@ let bids = [
 
 Auction.clear(asks.vals(), bids.vals(), Float.less);
 // => ?(70.0, 100)
+
 ```
 
 Here, we see the partial fulfilment an order.
 The maximum volume is 100 which is reached at the price of 70.0.
 The total ask volume at his price is 180 and the total bid volume only 100.
-Hence the first two ask order get filled and the third ask order get partially filled with 20 out of 100. 
+Hence the first two ask order get filled and the third ask order get partially filled with 20 out of 100.
 Note that the price of last ask is used in the price calculation, regardless of how much volume is fulfilled from it.
 
 ### Build & test
 
 Run:
+
 ```
 git clone git@github.com:research-ag/auction.git
 cd auction
@@ -171,17 +179,31 @@ mops test
 ### Mops benchmark
 
 Run
+
 ```
 mops bench
+```
+
+## Development
+
+### Formatting
+
+To format the code, run:
+
+```bash
+npm install --no-save prettier prettier-plugin-motoko
+npx prettier --plugin prettier-plugin-motoko --write '**/*.{mo,json,md}'
 ```
 
 ## Copyright
 
 MR Research AG, 2024
+
 ## Authors
 
 Main authors: Timo Hanke (timohanke)  
-Contributors: Andy Gura (AndyGura) 
+Contributors: Andy Gura (AndyGura)
+
 ## License
 
 Apache-2.0

@@ -1,51 +1,56 @@
 # Auction changelog
 
+## 3.1.0
+
+- Bump core dependency from 2.2.0 to 2.6.2
+- Compile warning-free with moc 2.0.0
+
 ## 3.0.5
 
-* Use bench-helper package
-* Bump core dependency
+- Use bench-helper package
+- Bump core dependency
 
 ## 3.0.4
 
-* Bump core dependency
-* Simplify bench code (needs mops >= 2.1.0)
+- Bump core dependency
+- Simplify bench code (needs mops >= 2.1.0)
 
 ## 3.0.3
 
-* Improve benchmark accuracy
+- Improve benchmark accuracy
 
 ## 3.0.2
 
-* Remove unused `test` dependency
-* Improve documentation
+- Remove unused `test` dependency
+- Improve documentation
 
 ## 3.0.1
 
-* Switch from base to core 2.0.0
+- Switch from base to core 2.0.0
 
 ## 3.0.0
 
-* Updated tie-break strategy: now we take the side of the range that has the higher order volume
-* Removed `clearRange` function and `rangeResult` type
-* Bug fixes
-* Bumped moc dependencies to 0.13.6
+- Updated tie-break strategy: now we take the side of the range that has the higher order volume
+- Removed `clearRange` function and `rangeResult` type
+- Bug fixes
+- Bumped moc dependencies to 0.13.6
 
 ## 2.0.0
 
-* Improved algorithm 30% faster
-* Two functions, one for price only, one for price range
-* Generic price type as type parameter (e.g. Nat, Int, Float)
-* No rejection of negative prices or infinity
-* Handle volume 0 orders
-* Bumped moc dependencies to 0.12.1
+- Improved algorithm 30% faster
+- Two functions, one for price only, one for price range
+- Generic price type as type parameter (e.g. Nat, Int, Float)
+- No rejection of negative prices or infinity
+- Handle volume 0 orders
+- Bumped moc dependencies to 0.12.1
 
 ## 1.0.0
 
-* Remove market orders
-* Limit return value to only price and volume
-* Refactor code for readability 
-* Trap on order price of 0 and infinity
+- Remove market orders
+- Limit return value to only price and volume
+- Refactor code for readability
+- Trap on order price of 0 and infinity
 
 ## 0.0.1
 
-* Initial version
+- Initial version

@@ -9,3 +9,10 @@
 dfx.json
 package-set.dhall
 vessel.dhall
+.icp/
+node_modules/
+package.json
+package-lock.json
+build/
+skills-lock.json
+.agents
